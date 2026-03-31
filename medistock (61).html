@@ -1,0 +1,2562 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)file:///C:/Users/sakaguchi.k/Downloads/medistock%20(39).html -->
+<html lang="ja"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediStock</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D1B2E;--bg2:#122438;--bg3:#1A3050;--bg4:#254268;
+  --sky:#5BA4E5;--skyd:#3A7EC4;--skyp:#E5F2FD;
+  --red:#E05470;--redp:#FDEAEE;
+  --amber:#E09030;--amberp:#FEF4E4;
+  --green:#3AB87A;--greenp:#E5F8EE;
+  --ink:#0A1520;--ink2:#1E3248;--ink3:#4A6480;
+  --bdr:#EEF2F7;--surf:#F5F8FC;
+  --sh:0 2px 12px rgba(0,0,0,.10);
+  --r:14px;
+}
+html,body{height:100%;font-family:'Noto Sans JP',sans-serif;font-size:13px;background:var(--bg);color:var(--ink);line-height:1.4;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+
+/* NAV */
+.nav{height:64px;background:#fff;border-bottom:3px solid var(--sky);padding:0 16px;display:flex;align-items:center;gap:2px;position:sticky;top:0;z-index:100;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.logo{display:flex;align-items:center;gap:8px;margin-right:16px;flex-shrink:0}
+.logo-icon{width:32px;height:32px;background:var(--sky);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo-name{font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:var(--ink2)}
+.navlinks{display:flex;align-items:center;gap:1px;flex:1;overflow:visible;min-width:0;flex-wrap:nowrap}
+.nl{padding:5px 7px;border-radius:8px;font-size:10.5px;font-weight:700;color:var(--ink);cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:3px;transition:all .13s;user-select:none;flex-shrink:0}
+.nl:hover{background:var(--skyp);color:var(--skyd)}
+.nl.active{background:var(--sky);color:#fff}
+.nbadge{background:var(--red);color:#fff;font-size:10px;font-weight:800;padding:2px 6px;border-radius:10px}
+.nav-r{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.csel{background:var(--surf);border:1.5px solid #D8E6F5;border-radius:20px;padding:7px 12px;font-size:12.5px;font-weight:600;color:var(--ink);font-family:inherit;cursor:pointer;outline:none;appearance:none}
+.csel option{background:#fff}
+.nsearch{background:var(--surf);border:1.5px solid #D8E6F5;border-radius:20px;padding:7px 14px;display:flex;align-items:center;gap:6px}
+.nsearch input{border:none;outline:none;background:none;font-size:12.5px;color:var(--ink);font-family:inherit;width:140px}
+.nsearch input::placeholder{color:var(--ink3)}
+.btn-primary{background:var(--sky);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .13s}
+.btn-primary:hover{background:var(--skyd)}
+.nbell{width:36px;height:36px;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;position:relative}
+.ndot{position:absolute;top:5px;right:5px;width:8px;height:8px;background:var(--red);border-radius:50%;border:2px solid #fff}
+.uchip{display:flex;align-items:center;gap:7px;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:20px;padding:5px 12px 5px 5px;cursor:pointer}
+.uav{width:28px;height:28px;background:var(--sky);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
+.uname-txt{font-size:13px;font-weight:700;color:var(--ink)}
+
+/* PAGE SYSTEM */
+.page{display:none}
+.page.active{display:block}
+#pg-dashboard.active{
+  display:flex;
+  flex-direction:column;
+  height:calc(100vh - 64px);
+  overflow:hidden;
+  padding:20px 24px 20px;
+  gap:14px;
+}
+#pg-inventory.active,#pg-transfer.active,#pg-history.active,
+#pg-orders.active,#pg-expiry.active,#pg-report.active,
+#pg-master.active,#pg-settings.active,#pg-import.active,#pg-stockopt.active,#pg-campaign.active{display:block;padding:20px 24px 40px;min-height:calc(100vh - 56px)}
+
+/* DASH HEADER */
+.d-hdr{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.d-title{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.d-sub{font-size:13px;color:#6EA8D4;margin-top:4px}
+.btn-outline{background:rgba(91,164,229,.15);border:1.5px solid rgba(91,164,229,.5);color:#9BCCE8;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s}
+.btn-outline:hover{background:var(--sky);color:#fff;border-color:var(--sky)}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr);gap:14px;flex-shrink:0}
+.kpi{background:var(--bg2);border-radius:16px;padding:20px 24px;box-shadow:0 1px 3px rgba(0,0,0,.2),0 4px 16px rgba(0,0,0,.3);border-top:4px solid var(--sky);border-bottom:1px solid rgba(255,255,255,.3);border-left:1px solid rgba(255,255,255,.3);border-right:1px solid rgba(255,255,255,.3);display:flex;flex-direction:column;gap:6px}
+.kpi.r{border-top-color:var(--red)}.kpi.a{border-top-color:var(--amber)}.kpi.g{border-top-color:var(--green)}
+.kpi-lbl{font-size:15.5px;font-weight:700;color:#fff}
+.kpi-num{font-family:'Outfit',sans-serif;font-size:44px;font-weight:800;line-height:1;color:#fff;margin:4px 0}
+.kpi.r .kpi-num{color:#fff}.kpi.a .kpi-num{color:#fff}.kpi.g .kpi-num{color:#fff}
+.kpi-note{font-size:12px;color:#fff}
+
+/* MAIN GRID — 残りの高さを全部使う */
+.d-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr);gap:14px;align-items:stretch;flex:1;min-height:0;height:100%}
+.d-col{display:flex;flex-direction:column;min-height:0;height:100%}
+
+/* WHITE CARD — 全カード同じ高さ、内部スクロール */
+.dc{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;border:2px solid #fff}
+.dc-h{padding:14px 20px;border-bottom:1.5px solid #EEF2F7;display:flex;align-items:center;justify-content:space-between;background:#EEF4FB;flex-shrink:0}
+.dc-title{font-size:14px;font-weight:700;color:var(--ink)}
+.dc-b{padding:12px 20px;overflow-y:auto;flex:1;min-height:0}
+.dc-b::-webkit-scrollbar{width:4px}
+.dc-b::-webkit-scrollbar-track{background:#F5F8FC}
+.dc-b::-webkit-scrollbar-thumb{background:#C8D8EB;border-radius:2px}
+.dc-badge{font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--redp);color:var(--red)}
+
+/* ALERT ROWS */
+.arow{display:flex;align-items:center;gap:12px;padding:12px 8px;border-radius:10px;margin-bottom:2px;transition:background .12s;border-bottom:1px solid #EEF2F7}
+.arow:hover{background:#F0F7FF}
+.arow:last-child{margin-bottom:0;border-bottom:none}
+.apip{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.apip.critical{background:var(--red)}.apip.warning{background:var(--amber)}
+.ainfo{flex:1;min-width:0}
+.aname{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aclinic{font-size:12px;color:var(--ink3);margin-top:3px;font-weight:500}
+.achip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.achip.critical{background:var(--redp);color:var(--red)}.achip.warning{background:var(--amberp);color:var(--amber)}
+.abtn{font-size:12.5px;font-weight:700;background:var(--sky);color:#fff;border:none;border-radius:20px;padding:5px 14px;cursor:pointer;font-family:inherit;flex-shrink:0;transition:background .12s}
+.abtn:hover{background:var(--skyd)}
+
+/* EXPIRY ROWS */
+.erow{display:flex;align-items:flex-start;padding:13px 0;border-bottom:1px solid #EEF2F7;gap:12px}
+.erow:last-child{border-bottom:none}
+.einfo{flex:1;min-width:0}
+.ename{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eclinic{font-size:12px;color:var(--ink3);margin-top:3px;font-weight:500}
+.etag{font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;flex-shrink:0;white-space:nowrap;text-align:center}
+
+/* PU ROWS */
+.prow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #EEF2F7}
+.prow:last-child{border-bottom:none}
+.pname{font-size:14px;font-weight:700;color:var(--ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar{flex:0 0 80px;height:7px;background:#DDE8F5;border-radius:4px;overflow:hidden}
+.pfill{height:100%;background:linear-gradient(90deg,var(--sky),var(--skyd));border-radius:4px}
+.pcnt{font-size:14px;font-weight:700;color:var(--skyd);width:36px;text-align:right;flex-shrink:0}
+
+/* TRANSFER CARD — 白カードに統一・高さ揃え */
+.dnc{background:#fff;border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;border:2px solid #fff}
+.dnch{padding:14px 20px;border-bottom:1.5px solid #EEF2F7;font-size:14px;font-weight:700;color:var(--ink);background:#EEF4FB;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dncb{padding:14px 20px;display:flex;flex-direction:column;gap:11px;overflow-y:auto;flex:1;min-height:0}
+.dncb::-webkit-scrollbar{width:4px}
+.dncb::-webkit-scrollbar-track{background:#F5F8FC}
+.dncb::-webkit-scrollbar-thumb{background:#C8D8EB;border-radius:2px}
+.tqf{width:100%;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:10px;padding:10px 13px;font-size:13px;font-weight:500;font-family:inherit;color:var(--ink);outline:none;appearance:none;transition:border-color .12s}
+.tqf:focus{border-color:var(--sky)}
+.tqf option{background:#fff}
+.tqf-row{display:flex;gap:8px;align-items:center}
+.tqf-arrow{color:var(--sky);font-size:18px;flex-shrink:0;font-weight:700}
+.tqf-num{flex:0 0 72px}
+.tqf-btn{flex:1;background:var(--sky);color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .12s,transform .1s}
+.tqf-btn:hover{background:var(--skyd)}
+.tqf-btn:active{transform:scale(.98)}
+.tr-stat{padding-top:14px;border-top:1.5px solid #EEF2F7}
+.tr-stat-lbl{font-size:11.5px;color:var(--ink3);margin-bottom:5px;font-weight:600}
+.tr-stat-num{font-family:'Outfit',sans-serif;font-size:36px;font-weight:700;color:var(--ink);line-height:1}
+.tr-stat-sub{font-size:13px;color:var(--ink3);margin-top:5px;word-break:keep-all}
+
+/* OTHER PAGES */
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ph-title{font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:#fff}
+.ph-sub{font-size:11.5px;color:#7AACCF;margin-top:2px}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--sh)}
+.ch{padding:11px 16px;border-bottom:2px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+.ch-title{font-size:13px;font-weight:800;color:var(--ink)}
+.cbadge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:12px;background:var(--redp);color:var(--red);border:1px solid #F0A0B0}
+.cb{padding:12px 16px}
+.fbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:2px solid var(--bdr);align-items:center}
+.fb{padding:5px 12px;border-radius:16px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer;border:1.5px solid #D8E6F5;background:#fff;color:var(--ink3);transition:all .12s}
+.fb:hover{border-color:var(--sky);color:var(--skyd)}
+.fb.active{background:var(--sky);color:#fff;border-color:var(--sky)}
+.fb.danger{background:var(--redp);color:var(--red);border-color:var(--red)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:9px 13px;background:var(--surf);color:var(--ink3);font-size:10.5px;font-weight:700;white-space:nowrap}
+td{padding:10px 13px;border-bottom:1.5px solid var(--bdr);color:var(--ink)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFCFF}
+.chip{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:700}
+.chip.ok{background:var(--greenp);color:var(--green)}
+.chip.warn{background:var(--amberp);color:var(--amber)}
+.chip.ng{background:var(--redp);color:var(--red)}
+.chip.sky{background:var(--skyp);color:var(--skyd)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.four{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.sc{background:#fff;border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);border-top:3px solid var(--sky)}
+.sc.r{border-top-color:var(--red)}.sc.a{border-top-color:var(--amber)}.sc.g{border-top-color:var(--green)}
+.sc-icon{font-size:20px;margin-bottom:6px}
+.sc-label{font-size:11px;font-weight:700;color:var(--ink3)}
+.sc-num{font-family:'Outfit',sans-serif;font-size:32px;font-weight:800;color:var(--skyd);line-height:1.1}
+.sc.r .sc-num{color:var(--red)}.sc.a .sc-num{color:var(--amber)}.sc.g .sc-num{color:var(--green)}
+.sc-note{font-size:10.5px;color:var(--ink3);margin-top:2px}
+
+/* FORM */
+.finp{width:100%;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:8px;padding:8px 11px;font-size:12.5px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .13s;appearance:none}
+.finp:focus{border-color:var(--sky)}
+.flabel{font-size:11px;font-weight:700;color:var(--ink3);display:block;margin-bottom:4px}
+.fgroup{margin-bottom:10px}
+.btn-save{background:var(--sky);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;width:100%;transition:background .13s}
+.btn-save:hover{background:var(--skyd)}
+.btn-clear{background:var(--surf);color:var(--ink3);border:1.5px solid #D8E6F5;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .13s}
+.btn-clear:hover{border-color:var(--sky);color:var(--skyd)}
+.btn-row{display:flex;gap:7px;margin-top:4px}
+.toggle{width:40px;height:22px;background:#D8E6F5;border-radius:11px;cursor:pointer;position:relative;transition:background .18s;flex-shrink:0}
+.toggle.on{background:var(--sky)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+
+/* MASTER */
+.mtabs{display:flex;gap:4px;background:var(--bg2);border-radius:12px;padding:5px;width:fit-content;margin-bottom:14px}
+.mtab{padding:6px 14px;border-radius:9px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:none;color:#7AACCF;background:transparent;transition:all .13s}
+.mtab:hover{background:var(--bg3);color:#fff}
+.mtab.active{background:var(--sky);color:#fff}
+.mpanel{display:none}.mpanel.active{display:block}
+.mgrid{display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start}
+.mform{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--sh)}
+.mform-title{font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:14px}
+.mlist{background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.mlist-head{padding:11px 16px;border-bottom:2px solid var(--bdr);font-size:13px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:space-between}
+.mrow{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1.5px solid var(--bdr);transition:background .11s}
+.mrow:hover{background:var(--surf)}.mrow:last-child{border-bottom:none}
+.mrow-icon{width:34px;height:34px;border-radius:9px;background:var(--skyp);color:var(--skyd);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.mrow-name{font-size:13px;font-weight:700;color:var(--ink)}
+.mrow-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.mrow-btns{display:flex;gap:5px;margin-left:auto;flex-shrink:0}
+.medit{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--skyp);color:var(--skyd);border:1.5px solid #A8D0F5;transition:all .12s}
+.medit:hover{background:var(--sky);color:#fff;border-color:var(--sky)}
+.mdel{font-size:11px;font-weight:700;padding:4px 9px;border-radius:7px;cursor:pointer;font-family:inherit;background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;transition:all .12s}
+.mdel:hover{background:var(--red);color:#fff}
+
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(5,15,40,.6);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ov.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:24px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.25);animation:mIn .18s ease}
+@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-title{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:16px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.fg-g{display:flex;flex-direction:column;gap:4px}
+.fg-g.full{grid-column:1/-1}
+.fg-g label{font-size:11px;font-weight:700;color:var(--ink3)}
+.fg-g input,.fg-g select{background:var(--surf);border:1.5px solid #D8E6F5;border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit;color:var(--ink);outline:none;transition:border-color .13s}
+.fg-g input:focus,.fg-g select:focus{border-color:var(--sky)}
+.mfoot{display:flex;gap:7px;justify-content:flex-end;margin-top:16px}
+.btn-mo-ghost{background:var(--surf);color:var(--ink3);border:1.5px solid #D8E6F5;border-radius:16px;padding:8px 16px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .13s}
+.btn-mo-ghost:hover{border-color:var(--sky);color:var(--skyd)}
+.btn-mo-primary{background:var(--sky);color:#fff;border:none;border-radius:16px;padding:8px 16px;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .13s}
+.btn-mo-primary:hover{background:var(--skyd)}
+.dlv-opt{display:flex;align-items:center;gap:11px;padding:11px 13px;border:2px solid var(--bdr);border-radius:11px;cursor:pointer;transition:all .14s;margin-bottom:7px}
+.dlv-opt:last-child{margin-bottom:0}
+.dlv-opt:hover,.dlv-opt.active{border-color:var(--sky);background:var(--skyp)}
+.dlv-opt-icon{width:36px;height:36px;border-radius:9px;background:var(--surf);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.dlv-opt.active .dlv-opt-icon{background:#fff}
+.dlv-opt-name{font-size:13.5px;font-weight:700;color:var(--ink)}
+.dlv-opt-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.dlv-check{margin-left:auto;width:20px;height:20px;border-radius:50%;background:var(--sky);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;opacity:0;transition:opacity .14s;flex-shrink:0}
+.dlv-opt.active .dlv-check{opacity:1}
+.uo{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;cursor:pointer;margin-bottom:7px;transition:all .12s}
+.uo:hover{border-color:var(--sky);background:var(--skyp)}
+.uo-av{width:32px;height:32px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0}
+.uo-name{font-size:13px;font-weight:700}
+.uo-role{font-size:11px;color:var(--ink3)}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--bg2);border:1.5px solid var(--bg4);border-radius:11px;padding:10px 15px;font-size:13px;font-weight:500;color:#fff;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);min-width:220px;animation:tin .2s ease}
+@keyframes tin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* MODE CARDS */
+.mode-card{border:2px solid var(--bdr);border-radius:14px;padding:18px 20px;cursor:pointer;transition:all .18s;background:#fff;position:relative}
+.mode-card:hover{border-color:var(--sky);background:var(--skyp)}
+.mode-card.active{border-color:var(--sky);background:var(--skyp);box-shadow:0 0 0 3px rgba(91,164,229,.15)}
+.mode-card-icon{font-size:26px;margin-bottom:10px}
+.mode-card-title{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:6px}
+.mode-card-desc{font-size:12px;color:var(--ink3);line-height:1.7}
+.mode-check{display:none;margin-top:12px;font-size:12px;font-weight:800;color:var(--skyd);background:#fff;border:1.5px solid var(--sky);border-radius:20px;padding:4px 14px;width:fit-content}
+.mode-card.active .mode-check{display:block}
+
+/* IMPORT */
+.imp-step{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:20px;transition:all .2s}
+.imp-step.active{background:var(--sky)}
+.imp-snum{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.imp-step.active .imp-snum{background:#fff;color:var(--skyd)}
+.imp-slbl{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap}
+.imp-step.active .imp-slbl{color:#fff}
+.imp-step.done .imp-slbl{color:var(--sky)}
+.imp-step.done .imp-snum{background:var(--sky);color:#fff}
+.imp-stepline{flex:1;height:2px;background:rgba(255,255,255,.1);max-width:60px}
+.imp-drop{border:2px dashed rgba(91,164,229,.4);border-radius:16px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(91,164,229,.04)}
+.imp-drop:hover,.imp-drop.drag{border-color:var(--sky);background:rgba(91,164,229,.1)}
+.imp-drop-icon{font-size:44px;margin-bottom:12px}
+.imp-drop-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:6px}
+.imp-drop-sub{font-size:13px;color:#6EA8D4}
+.imp-col-card{background:var(--surf);border:1.5px solid var(--bdr);border-radius:10px;padding:12px 14px;position:relative}
+.imp-col-card.req{border-color:#A8D0F5;background:var(--skyp)}
+.imp-col-name{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:4px}
+.imp-col-ex{font-size:11px;color:var(--ink3);line-height:1.5}
+.imp-col-badge{position:absolute;top:10px;right:10px;font-size:10px;font-weight:800;padding:2px 7px;border-radius:8px;background:#D8E6F5;color:var(--ink3)}
+.imp-col-badge.req{background:var(--skyp);color:var(--skyd)}
+.imp-map-lbl{font-size:12.5px;font-weight:700;color:var(--ink);padding:6px 0}
+.imp-map-arrow{text-align:center;font-size:18px;color:var(--sky);font-weight:800}
+.imp-map-sel{width:100%;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;color:var(--ink);outline:none;appearance:none;transition:border-color .13s}
+.imp-map-sel:focus{border-color:var(--sky)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="logo"><div class="logo-icon">🌿</div><span class="logo-name">MediStock</span></div>
+  <div class="navlinks">
+    <div class="nl active" onclick="go(&#39;dashboard&#39;,this)">🏠 ダッシュボード</div>
+    <div class="nl" onclick="go(&#39;inventory&#39;,this)">📦 在庫一覧 <span class="nbadge">5</span></div>
+    <div class="nl multi-only" onclick="go(&#39;transfer&#39;,this)">🔀 院間移送</div>
+    <div class="nl" onclick="go(&#39;history&#39;,this)">🔄 操作履歴</div>
+    <div class="nl" onclick="go(&#39;orders&#39;,this)">🛒 発注管理 <span class="nbadge">2</span></div>
+    <div class="nl" onclick="go(&#39;expiry&#39;,this)">⏰ 期限管理</div>
+    <div class="nl" onclick="go(&#39;report&#39;,this)">📊 月次レポート</div>
+    <div class="nl" onclick="go(&#39;stockopt&#39;,this)">🎯 適正在庫</div>
+    <div class="nl" onclick="go(&#39;campaign&#39;,this)">🎪 キャンペーン</div>
+    <div class="nl" onclick="go(&#39;import&#39;,this)" style="border:1.5px solid rgba(91,164,229,.4)">📥 インポート</div>
+    <div class="nl" onclick="go(&#39;master&#39;,this)">🗂️ マスター管理</div>
+    <div class="nl" onclick="go(&#39;settings&#39;,this)">⚙️ 設定</div>
+  </div>
+  <div class="nav-r">
+    <select class="csel multi-only" id="csel" onchange="onClinic()">
+      <option value="all">🏥 全院統合</option>
+      <option value="1">銀座本院</option>
+      <option value="2">渋谷分院</option>
+      <option value="3">新宿分院</option>
+    </select>
+    <div class="nsearch" id="nav-search" style="display:none"><span style="color:#557799;font-size:12px">🔍</span><input id="nav-search-input" placeholder="製品名・ロット番号..."></div>
+    <button class="btn-primary" onclick="openM(&#39;modal-add&#39;)">＋ 入荷登録</button>
+    <div class="nbell">🔔<div class="ndot"></div></div>
+    <div class="uchip" onclick="openM(&#39;modal-user&#39;)">
+      <div class="uav" id="uav">田</div>
+      <span class="uname-txt" id="uname">田中 院長</span>
+    </div>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div id="pg-dashboard" class="page active">
+  <!-- ヘッダー -->
+  <div class="d-hdr">
+    <div>
+      <div class="d-title">ダッシュボード</div>
+      <div class="d-sub" id="dash-date">2026年3月31日火曜日 ｜ 全3院の在庫状況</div>
+    </div>
+    <button class="btn-outline" onclick="go(&#39;report&#39;,null)">📊 月次レポート</button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi r">
+      <div class="kpi-lbl">⚠️ 要補充アイテム</div>
+      <div class="kpi-num">5</div>
+      <div class="kpi-note">うち緊急 2件</div>
+    </div>
+    <div class="kpi a">
+      <div class="kpi-lbl">⏰ 期限切れ間近（30日）</div>
+      <div class="kpi-num">3</div>
+      <div class="kpi-note">要対応</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">📦 総在庫品目（全院）</div>
+      <div class="kpi-num">48</div>
+      <div class="kpi-note">全3院 合計</div>
+    </div>
+  </div>
+
+  <!-- メイングリッド: 左(アラート) 中(期限+使用量) 右(移送) -->
+  <div class="d-main" style="grid-template-columns: minmax(0px, 1fr) minmax(0px, 1fr) minmax(0px, 1.4fr);">
+
+    <!-- 左: 補充アラート -->
+    <div class="d-col">
+      <div class="dc">
+        <div class="dc-h">
+          <div class="dc-title">⚠️ 補充アラート</div>
+          <span class="dc-badge" id="al-cnt">20件</span>
+        </div>
+        <div class="dc-b" id="al-list">
+    <div class="arow">
+      <div class="apip critical"></div>
+      <div class="ainfo">
+        <div class="aname">💉 ボトックス 100U（アラガン）</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip critical">残2</span>
+      <button class="abtn" onclick="orderAlert(0)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip critical"></div>
+      <div class="ainfo">
+        <div class="aname">💉 ジュビダーム ウルトラ4</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip critical">残1</span>
+      <button class="abtn" onclick="orderAlert(1)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip critical"></div>
+      <div class="ainfo">
+        <div class="aname">💉 ヒアルロン酸 テオシアル 1ml</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip critical">残1</span>
+      <button class="abtn" onclick="orderAlert(2)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip critical"></div>
+      <div class="ainfo">
+        <div class="aname">💉 プラセンタ注射液 2ml</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip critical">残2</span>
+      <button class="abtn" onclick="orderAlert(3)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip critical"></div>
+      <div class="ainfo">
+        <div class="aname">💉 グルタチオン注射 200mg</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip critical">残2</span>
+      <button class="abtn" onclick="orderAlert(4)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">💉 ビタミンC点滴 1000mg</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残3</span>
+      <button class="abtn" onclick="orderAlert(5)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📌 注射針 30G（50本入）</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip warning">残3</span>
+      <button class="abtn" onclick="orderAlert(6)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📌 注射針 27G（50本入）</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残4</span>
+      <button class="abtn" onclick="orderAlert(7)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📌 シリンジ 1ml（10本入）</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip warning">残3</span>
+      <button class="abtn" onclick="orderAlert(8)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 消毒用エタノール 500ml</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残4</span>
+      <button class="abtn" onclick="orderAlert(9)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 レチノールクリーム 50g</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip warning">残6</span>
+      <button class="abtn" onclick="orderAlert(10)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 ヒアルロン酸美容液 30ml</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip warning">残5</span>
+      <button class="abtn" onclick="orderAlert(11)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 アルブチン導入液 100ml</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残4</span>
+      <button class="abtn" onclick="orderAlert(12)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 EGF美容液 20ml</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip warning">残5</span>
+      <button class="abtn" onclick="orderAlert(13)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📋 保護テープ（50枚入）</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip warning">残8</span>
+      <button class="abtn" onclick="orderAlert(14)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📋 滅菌ガーゼ（10枚入）</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残6</span>
+      <button class="abtn" onclick="orderAlert(15)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📋 医療用手袋 S（100枚入）</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip warning">残7</span>
+      <button class="abtn" onclick="orderAlert(16)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">📋 医療用手袋 M（100枚入）</div>
+        <div class="aclinic">🏥 銀座本院</div>
+      </div>
+      <span class="achip warning">残6</span>
+      <button class="abtn" onclick="orderAlert(17)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">💊 局所麻酔クリーム 30g</div>
+        <div class="aclinic">🏥 渋谷分院</div>
+      </div>
+      <span class="achip warning">残3</span>
+      <button class="abtn" onclick="orderAlert(18)">発注</button>
+    </div>
+    <div class="arow">
+      <div class="apip warning"></div>
+      <div class="ainfo">
+        <div class="aname">🧴 冷却ジェル 200g</div>
+        <div class="aclinic">🏥 新宿分院</div>
+      </div>
+      <span class="achip warning">残4</span>
+      <button class="abtn" onclick="orderAlert(19)">発注</button>
+    </div></div>
+      </div>
+    </div>
+
+    <!-- 中: 期限切れ間近 -->
+    <div class="d-col">
+      <div class="dc">
+        <div class="dc-h">
+          <div class="dc-title">⏰ 期限切れ間近</div>
+          <span class="dc-badge">3件</span>
+        </div>
+        <div class="dc-b" id="exp-list"><div class="erow">
+      <div class="einfo">
+        <div class="ename">ボツリヌストキシン A型</div>
+        <div class="eclinic">銀座本院 · 3本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--red);white-space:nowrap">4月5日まで</div>
+        <span class="etag" style="background:var(--redp);color:var(--red);white-space:nowrap">残5日・緊急</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ジュビダーム ウルトラ4</div>
+        <div class="eclinic">渋谷分院 · 2本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--red);white-space:nowrap">4月8日まで</div>
+        <span class="etag" style="background:var(--redp);color:var(--red);white-space:nowrap">残8日・緊急</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">プラセンタ注射液</div>
+        <div class="eclinic">新宿分院 · 10A</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--red);white-space:nowrap">4月12日まで</div>
+        <span class="etag" style="background:var(--redp);color:var(--red);white-space:nowrap">残12日・緊急</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ヒアルロン酸 テオシアル</div>
+        <div class="eclinic">銀座本院 · 2本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--amber);white-space:nowrap">4月15日まで</div>
+        <span class="etag" style="background:var(--amberp);color:var(--amber);white-space:nowrap">残15日・注意</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ビタミンC点滴製剤</div>
+        <div class="eclinic">渋谷分院 · 5本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--amber);white-space:nowrap">4月18日まで</div>
+        <span class="etag" style="background:var(--amberp);color:var(--amber);white-space:nowrap">残18日・注意</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">グルタチオン注射 200mg</div>
+        <div class="eclinic">新宿分院 · 8A</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--amber);white-space:nowrap">4月22日まで</div>
+        <span class="etag" style="background:var(--amberp);color:var(--amber);white-space:nowrap">残22日・注意</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">レチノールクリーム 50g</div>
+        <div class="eclinic">銀座本院 · 4本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--amber);white-space:nowrap">4月28日まで</div>
+        <span class="etag" style="background:var(--amberp);color:var(--amber);white-space:nowrap">残28日・注意</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">EGF美容液 20ml</div>
+        <div class="eclinic">渋谷分院 · 6本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">5月3日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残33日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">局所麻酔クリーム 30g</div>
+        <div class="eclinic">新宿分院 · 3本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">5月10日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残40日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ビタミンCセラム 30ml</div>
+        <div class="eclinic">銀座本院 · 5本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">5月14日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残44日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">アルブチン導入液 100ml</div>
+        <div class="eclinic">渋谷分院 · 3本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">5月20日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残50日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ヒアルロン酸美容液 30ml</div>
+        <div class="eclinic">新宿分院 · 4本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">5月25日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残55日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">冷却ジェル 200g</div>
+        <div class="eclinic">銀座本院 · 6本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">6月1日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残62日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">医療用テープ（50枚入）</div>
+        <div class="eclinic">渋谷分院 · 2箱</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">6月8日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残69日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">プラセンタエキス 原液</div>
+        <div class="eclinic">新宿分院 · 10ml</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">6月15日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残76日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ナイアシンアミド液 50ml</div>
+        <div class="eclinic">銀座本院 · 4本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">6月22日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残83日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ペプチド美容液 25ml</div>
+        <div class="eclinic">渋谷分院 · 5本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">7月1日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残92日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">酵素洗顔パウダー 75g</div>
+        <div class="eclinic">新宿分院 · 8本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">7月10日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残101日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">SPF50日焼け止め 50g</div>
+        <div class="eclinic">銀座本院 · 6本</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">7月18日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残109日・正常</span>
+      </div>
+    </div><div class="erow">
+      <div class="einfo">
+        <div class="ename">ビタミンB12注射液</div>
+        <div class="eclinic">渋谷分院 · 12A</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:var(--green);white-space:nowrap">7月25日まで</div>
+        <span class="etag" style="background:var(--greenp);color:var(--green);white-space:nowrap">残116日・正常</span>
+      </div>
+    </div></div>
+      </div>
+    </div>
+
+    <!-- 右: クイック移送 -->
+    <div class="d-col multi-only">
+      <div class="dnc">
+        <div class="dnch">🔀 クイック院間移送</div>
+        <div class="dncb">
+          <select class="tqf" id="q-prod">
+            <option>製品を選択...</option>
+            <option>ボトックス 100U</option>
+            <option>ジュビダーム ウルトラ4</option>
+            <option>プラセンタ注射液</option>
+            <option>注射針 30G</option>
+          </select>
+          <div class="tqf-row">
+            <select class="tqf" id="q-from" style="flex:1">
+              <option value="1">銀座本院（元）</option>
+              <option value="2">渋谷分院（元）</option>
+              <option value="3">新宿分院（元）</option>
+            </select>
+            <span class="tqf-arrow">→</span>
+            <select class="tqf" id="q-to" style="flex:1">
+              <option value="2">渋谷分院（先）</option>
+              <option value="3">新宿分院（先）</option>
+              <option value="1">銀座本院（先）</option>
+            </select>
+          </div>
+          <div class="tqf-row">
+            <input class="tqf tqf-num" type="number" id="q-qty" placeholder="数量" min="1">
+            <button class="tqf-btn" onclick="doQTransfer()">移送する →</button>
+          </div>
+          <div class="tr-stat">
+            <div class="tr-stat-lbl">今月の移送件数</div>
+            <div class="tr-stat-num">7 <span style="font-size:13px;color:#6EA8D4;font-weight:500">件</span></div>
+            <div class="tr-stat-sub">銀座→渋谷 4件 ／ 銀座→新宿 3件</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /d-main -->
+</div>
+
+<!-- 在庫一覧 -->
+<div id="pg-inventory" class="page">
+  <div class="ph"><div><div class="ph-title">📦 在庫一覧</div><div class="ph-sub">全3院の在庫をリアルタイム管理</div></div><button class="btn-primary" onclick="openM(&#39;modal-add&#39;)">＋ 入荷登録</button></div>
+  <div class="card">
+    <div class="fbar">
+      <button class="fb active" onclick="filterInv(this,&#39;all&#39;)">すべて</button>
+      <button class="fb" onclick="filterInv(this,&#39;injection&#39;)">💉 注射・点滴</button>
+      <button class="fb" onclick="filterInv(this,&#39;skincare&#39;)">🧴 スキンケア</button>
+      <button class="fb" onclick="filterInv(this,&#39;supply&#39;)">📋 消耗品</button>
+      <div style="display:flex;align-items:center;gap:6px;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:20px;padding:5px 12px;margin-left:8px">
+        <span style="color:#557799;font-size:12px">🔍</span>
+        <input id="inv-search" type="text" placeholder="製品名・ロット番号..." style="border:none;outline:none;background:none;font-size:12px;color:var(--ink);font-family:inherit;width:160px" oninput="filterInvSearch(this.value)">
+      </div>
+      <button class="fb danger" style="margin-left:auto" onclick="filterInv(this,&#39;low&#39;)">⚠️ 要補充のみ</button>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>製品名</th><th>カテゴリ</th><th class="multi-only">クリニック</th><th style="text-align:center">在庫数</th><th style="text-align:center">最小在庫</th><th>有効期限</th><th>状態</th><th>操作</th></tr></thead>
+      <tbody id="inv-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- 院間移送 -->
+<div id="pg-transfer" class="page">
+  <div class="ph"><div><div class="ph-title">🔀 院間移送</div><div class="ph-sub">本院から分院への在庫移送を記録</div></div></div>
+  <div class="two">
+    <div class="mform">
+      <div class="mform-title">移送を登録する</div>
+      <div class="fgroup"><label class="flabel">製品</label><select class="finp" id="tr-prod"><option>選択してください</option><option>ボトックス 100U</option><option>ジュビダーム ウルトラ4</option><option>プラセンタ注射液</option><option>注射針 30G</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;margin-bottom:10px">
+        <div><label class="flabel">移送元</label><select class="finp" id="tr-from"><option value="1">銀座本院</option><option value="2">渋谷分院</option><option value="3">新宿分院</option></select></div>
+        <div style="font-size:18px;color:var(--sky);padding-bottom:4px;text-align:center">→</div>
+        <div><label class="flabel">移送先</label><select class="finp" id="tr-to"><option value="2">渋谷分院</option><option value="3">新宿分院</option><option value="1">銀座本院</option></select></div>
+      </div>
+      <div class="fgroup"><label class="flabel">数量</label><input class="finp" type="number" id="tr-qty" placeholder="例: 10" min="1"></div>
+      <div class="fgroup"><label class="flabel">備考（任意）</label><input class="finp" type="text" id="tr-note" placeholder="例: 月初補充分"></div>
+      <button class="btn-save" onclick="submitTransfer()">✓ 移送を記録する</button>
+    </div>
+    <div class="mlist">
+      <div class="mlist-head">移送履歴</div>
+      <div class="tbl-wrap"><table><thead><tr><th>日時</th><th>製品</th><th>移送元→先</th><th style="text-align:center">数量</th><th>操作者</th></tr></thead><tbody id="tr-hist"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- 操作履歴 -->
+<div id="pg-history" class="page">
+  <div class="ph"><div><div class="ph-title">🔄 操作履歴</div><div class="ph-sub">全スタッフの操作が自動記録されます</div></div></div>
+  <div class="card">
+    <div class="fbar">
+      <button class="fb active" onclick="filterHist(this,&#39;all&#39;)">すべて</button>
+      <button class="fb" onclick="filterHist(this,&#39;use&#39;)">💉 使用</button>
+      <button class="fb" onclick="filterHist(this,&#39;add&#39;)">📦 入荷</button>
+      <button class="fb" onclick="filterHist(this,&#39;transfer&#39;)">🔀 移送</button>
+      <button class="fb" onclick="filterHist(this,&#39;order&#39;)">🛒 発注</button>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- 発注管理 -->
+<div id="pg-orders" class="page">
+  <div class="ph"><div><div class="ph-title">🛒 発注管理</div><div class="ph-sub">発注待ち・発注履歴を管理</div></div></div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="ch"><div class="ch-title">🔴 発注待ち</div><span class="cbadge" id="orders-pending-cnt" style="background: var(--greenp); color: var(--green);">0件</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>製品名</th><th>クリニック</th><th style="text-align:center">推奨発注数</th><th>サプライヤー</th><th>登録日時</th><th>操作</th></tr></thead><tbody id="orders-pending-body"><tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ch-title">📋 発注履歴（確定済み）</div><span style="font-size:11px;color:var(--ink3)" id="orders-done-cnt">3件</span></div>
+    <div class="tbl-wrap"><table><thead><tr><th>確定日時</th><th>製品名</th><th>クリニック</th><th style="text-align:center">数量</th><th>状態</th></tr></thead><tbody id="orders-done-body">
+    <tr>
+      <td style="color:var(--ink3);font-size:11.5px">2025/03/15 10:00</td>
+      <td style="font-weight:700">プラセンタ注射液</td>
+      <td>銀座本院</td>
+      <td style="text-align:center">30A</td>
+      <td><span class="chip ok">入荷済み</span></td>
+    </tr>
+    <tr>
+      <td style="color:var(--ink3);font-size:11.5px">2025/03/10 14:30</td>
+      <td style="font-weight:700">注射針 30G</td>
+      <td>銀座本院</td>
+      <td style="text-align:center">20箱</td>
+      <td><span class="chip ok">入荷済み</span></td>
+    </tr>
+    <tr>
+      <td style="color:var(--ink3);font-size:11.5px">2025/03/05 09:15</td>
+      <td style="font-weight:700">ビタミンC注射液</td>
+      <td>渋谷分院</td>
+      <td style="text-align:center">100A</td>
+      <td><span class="chip ok">入荷済み</span></td>
+    </tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- 期限管理 -->
+<div id="pg-expiry" class="page">
+  <div class="ph"><div><div class="ph-title">⏰ 期限管理</div><div class="ph-sub">全院の有効期限を一元管理</div></div></div>
+  <div class="three" id="exp-stats" style="margin-bottom:14px">
+    <div class="sc r"><div class="sc-icon">🚨</div><div class="sc-label">緊急（30日以内）</div><div class="sc-num">7</div><div class="sc-note">即対応が必要</div></div>
+    <div class="sc a"><div class="sc-icon">⚠️</div><div class="sc-label">要注意（90日以内）</div><div class="sc-num">9</div><div class="sc-note">計画的な使用を推奨</div></div>
+    <div class="sc g"><div class="sc-icon">✅</div><div class="sc-label">正常</div><div class="sc-num">4</div><div class="sc-note">問題なし</div></div></div>
+  <div class="card">
+    <div class="ch"><div class="ch-title">期限一覧（全院）</div></div>
+    <div class="tbl-wrap"><table><thead><tr><th>製品名</th><th>クリニック</th><th>ロット番号</th><th style="text-align:center">在庫数</th><th>有効期限</th><th style="text-align:center">残日数</th><th>状態</th></tr></thead><tbody id="exp-tbl"><tr><td style="font-weight:700">ボツリヌストキシン A型</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">BT2024-112</td><td style="text-align:center;font-weight:700">3本</td><td style="color:var(--red);font-weight:700">4月5日</td><td style="text-align:center;font-weight:800;color:var(--red)">5日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">ジュビダーム ウルトラ4</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">JD2024-330</td><td style="text-align:center;font-weight:700">2本</td><td style="color:var(--red);font-weight:700">4月8日</td><td style="text-align:center;font-weight:800;color:var(--red)">8日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">プラセンタ注射液</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">PL2024-089</td><td style="text-align:center;font-weight:700">10A</td><td style="color:var(--red);font-weight:700">4月12日</td><td style="text-align:center;font-weight:800;color:var(--red)">12日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">ヒアルロン酸 テオシアル</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">TH2024-330</td><td style="text-align:center;font-weight:700">2本</td><td style="color:var(--red);font-weight:700">4月15日</td><td style="text-align:center;font-weight:800;color:var(--red)">15日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">ビタミンC点滴製剤</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">VC2024-201</td><td style="text-align:center;font-weight:700">5本</td><td style="color:var(--red);font-weight:700">4月18日</td><td style="text-align:center;font-weight:800;color:var(--red)">18日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">グルタチオン注射 200mg</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">GT2024-055</td><td style="text-align:center;font-weight:700">8A</td><td style="color:var(--red);font-weight:700">4月22日</td><td style="text-align:center;font-weight:800;color:var(--red)">22日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">レチノールクリーム 50g</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">RC2024-488</td><td style="text-align:center;font-weight:700">4本</td><td style="color:var(--red);font-weight:700">4月28日</td><td style="text-align:center;font-weight:800;color:var(--red)">28日</td><td><span style="background:var(--redp);color:var(--red);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">緊急</span></td></tr><tr><td style="font-weight:700">EGF美容液 20ml</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">EG2024-110</td><td style="text-align:center;font-weight:700">6本</td><td style="color:var(--amber);font-weight:700">5月3日</td><td style="text-align:center;font-weight:800;color:var(--amber)">33日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">局所麻酔クリーム 30g</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">AN2024-220</td><td style="text-align:center;font-weight:700">3本</td><td style="color:var(--amber);font-weight:700">5月10日</td><td style="text-align:center;font-weight:800;color:var(--amber)">40日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">ビタミンCセラム 30ml</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">VS2024-201</td><td style="text-align:center;font-weight:700">5本</td><td style="color:var(--amber);font-weight:700">5月14日</td><td style="text-align:center;font-weight:800;color:var(--amber)">44日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">アルブチン導入液 100ml</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">AB2024-301</td><td style="text-align:center;font-weight:700">3本</td><td style="color:var(--amber);font-weight:700">5月20日</td><td style="text-align:center;font-weight:800;color:var(--amber)">50日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">ヒアルロン酸美容液 30ml</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">HA2024-405</td><td style="text-align:center;font-weight:700">4本</td><td style="color:var(--amber);font-weight:700">5月25日</td><td style="text-align:center;font-weight:800;color:var(--amber)">55日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">冷却ジェル 200g</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">CG2024-502</td><td style="text-align:center;font-weight:700">6本</td><td style="color:var(--amber);font-weight:700">6月1日</td><td style="text-align:center;font-weight:800;color:var(--amber)">62日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">医療用テープ（50枚入）</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">MT2024-610</td><td style="text-align:center;font-weight:700">2箱</td><td style="color:var(--amber);font-weight:700">6月8日</td><td style="text-align:center;font-weight:800;color:var(--amber)">69日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">プラセンタエキス 原液</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">PE2024-711</td><td style="text-align:center;font-weight:700">10ml</td><td style="color:var(--amber);font-weight:700">6月15日</td><td style="text-align:center;font-weight:800;color:var(--amber)">76日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">ナイアシンアミド液 50ml</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">NA2024-800</td><td style="text-align:center;font-weight:700">4本</td><td style="color:var(--amber);font-weight:700">6月22日</td><td style="text-align:center;font-weight:800;color:var(--amber)">83日</td><td><span style="background:var(--amberp);color:var(--amber);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">注意</span></td></tr><tr><td style="font-weight:700">ペプチド美容液 25ml</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">PP2024-901</td><td style="text-align:center;font-weight:700">5本</td><td style="color:var(--green);font-weight:700">7月1日</td><td style="text-align:center;font-weight:800;color:var(--green)">92日</td><td><span style="background:var(--greenp);color:var(--green);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">正常</span></td></tr><tr><td style="font-weight:700">酵素洗顔パウダー 75g</td><td>新宿分院</td><td style="color:var(--ink3);font-size:11.5px">EZ2024-010</td><td style="text-align:center;font-weight:700">8本</td><td style="color:var(--green);font-weight:700">7月10日</td><td style="text-align:center;font-weight:800;color:var(--green)">101日</td><td><span style="background:var(--greenp);color:var(--green);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">正常</span></td></tr><tr><td style="font-weight:700">SPF50日焼け止め 50g</td><td>銀座本院</td><td style="color:var(--ink3);font-size:11.5px">SP2024-111</td><td style="text-align:center;font-weight:700">6本</td><td style="color:var(--green);font-weight:700">7月18日</td><td style="text-align:center;font-weight:800;color:var(--green)">109日</td><td><span style="background:var(--greenp);color:var(--green);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">正常</span></td></tr><tr><td style="font-weight:700">ビタミンB12注射液</td><td>渋谷分院</td><td style="color:var(--ink3);font-size:11.5px">B12024-200</td><td style="text-align:center;font-weight:700">12A</td><td style="color:var(--green);font-weight:700">7月25日</td><td style="text-align:center;font-weight:800;color:var(--green)">116日</td><td><span style="background:var(--greenp);color:var(--green);border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">正常</span></td></tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- 月次レポート -->
+<div id="pg-report" class="page">
+  <div class="ph"><div><div class="ph-title">📊 月次レポート</div><div class="ph-sub">2025年3月 ｜ 全院</div></div><button class="btn-outline" onclick="toast(&#39;📄&#39;,&#39;PDFを生成中...&#39;)">📄 PDFで出力</button></div>
+  <div class="four" style="margin-bottom:14px">
+    <div class="sc"><div class="sc-icon">💴</div><div class="sc-label">使用コスト（全院）</div><div class="sc-num" style="font-size:26px">¥284K</div><div class="sc-note">前月比 −12%</div></div>
+    <div class="sc g"><div class="sc-icon">📋</div><div class="sc-label">使用件数（全院）</div><div class="sc-num">312</div><div class="sc-note">前月比 +8%</div></div>
+    <div class="sc r"><div class="sc-icon">🗑️</div><div class="sc-label">廃棄コスト</div><div class="sc-num" style="font-size:26px">¥24K</div><div class="sc-note">期限切れ 2件</div></div>
+    <div class="sc a"><div class="sc-icon">🔀</div><div class="sc-label">院間移送件数</div><div class="sc-num">7</div><div class="sc-note">前月比 +2件</div></div>
+  </div>
+  <div class="two">
+    <div class="card"><div class="ch"><div class="ch-title">🏥 院別コスト内訳</div></div><div class="cb">
+      <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>銀座本院</span><span style="color:var(--skyd)">¥142K (50%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:50%;background:var(--sky);border-radius:4px"></div></div></div>
+      <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>渋谷分院</span><span style="color:var(--skyd)">¥85K (30%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:30%;background:var(--sky);border-radius:4px;opacity:.65"></div></div></div>
+      <div><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>新宿分院</span><span style="color:var(--skyd)">¥57K (20%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:20%;background:var(--sky);border-radius:4px;opacity:.4"></div></div></div>
+    </div></div>
+    <div class="card"><div class="ch"><div class="ch-title">📉 ロス・廃棄分析</div></div>
+      <div class="tbl-wrap"><table><thead><tr><th>月</th><th>院</th><th style="text-align:right">廃棄コスト</th><th>理由</th></tr></thead><tbody>
+        <tr><td>3月</td><td>銀座本院</td><td style="text-align:right;color:var(--red);font-weight:700">¥24,000</td><td>期限切れ</td></tr>
+        <tr><td>2月</td><td>渋谷分院</td><td style="text-align:right;color:var(--red);font-weight:700">¥8,000</td><td>保管ミス</td></tr>
+        <tr><td>1月</td><td>新宿分院</td><td style="text-align:right;color:var(--red);font-weight:700">¥45,000</td><td>期限切れ</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- マスター管理 -->
+<div id="pg-master" class="page">
+  <div class="ph"><div><div class="ph-title">🗂️ マスター管理</div><div class="ph-sub">カテゴリ・クリニック・スタッフ・サプライヤー・ステータスの登録と編集</div></div></div>
+  <div class="mtabs">
+    <button class="mtab active" onclick="mTab(this,&#39;clinic&#39;)">🏥 クリニック</button>
+    <button class="mtab" onclick="mTab(this,&#39;cat&#39;)">📂 カテゴリ</button>
+    <button class="mtab" onclick="mTab(this,&#39;staff&#39;)">👤 スタッフ</button>
+    <button class="mtab" onclick="mTab(this,&#39;supplier&#39;)">🚚 サプライヤー</button>
+    <button class="mtab" onclick="mTab(this,&#39;status&#39;)">🏷️ ステータス</button>
+  </div>
+  <div id="mp-clinic" class="mpanel active"><div class="mgrid">
+    <div class="mform"><div class="mform-title" id="ftitle-clinic">🏥 クリニックを追加</div><input type="hidden" id="fid-clinic">
+      <div class="fgroup"><label class="flabel">クリニック名 *</label><input class="finp" id="f-clinic-name" placeholder="例: 銀座本院"></div>
+      <div class="fgroup"><label class="flabel">住所</label><input class="finp" id="f-clinic-addr" placeholder="例: 東京都中央区銀座1-1-1"></div>
+      <div class="fgroup"><label class="flabel">電話番号</label><input class="finp" id="f-clinic-tel" placeholder="例: 03-1234-5678"></div>
+      <div class="fgroup"><label class="flabel">区分</label><select class="finp" id="f-clinic-type"><option value="main">本院</option><option value="branch">分院</option></select></div>
+      <div class="fgroup"><label class="flabel">ステータス</label><select class="finp" id="f-clinic-active"><option value="1">稼働中</option><option value="0">停止中</option></select></div>
+      <div class="btn-row"><button class="btn-save" onclick="mSave(&#39;clinic&#39;)">保存する</button><button class="btn-clear" onclick="mReset(&#39;clinic&#39;)">クリア</button></div>
+    </div>
+    <div class="mlist"><div class="mlist-head"><span>クリニック一覧</span><span style="font-size:11px;color:var(--ink3)" id="mcnt-clinic"></span></div><div id="mlist-clinic"></div></div>
+  </div></div>
+  <div id="mp-cat" class="mpanel"><div class="mgrid">
+    <div class="mform"><div class="mform-title" id="ftitle-cat">📂 カテゴリを追加</div><input type="hidden" id="fid-cat">
+      <div class="fgroup"><label class="flabel">カテゴリ名 *</label><input class="finp" id="f-cat-name" placeholder="例: 注射・点滴薬剤"></div>
+      <div class="fgroup"><label class="flabel">アイコン</label><input class="finp" id="f-cat-icon" placeholder="例: 💉" style="font-size:16px"></div>
+      <div class="fgroup"><label class="flabel">説明</label><input class="finp" id="f-cat-desc" placeholder="例: ボトックス・ヒアルロン酸など"></div>
+      <div class="fgroup"><label class="flabel">保管条件</label><select class="finp" id="f-cat-storage"><option>常温保存</option><option>冷蔵保存（2〜8℃）</option><option>冷凍保存</option><option>遮光保存</option></select></div>
+      <div class="btn-row"><button class="btn-save" onclick="mSave(&#39;cat&#39;)">保存する</button><button class="btn-clear" onclick="mReset(&#39;cat&#39;)">クリア</button></div>
+    </div>
+    <div class="mlist"><div class="mlist-head">カテゴリ一覧</div><div id="mlist-cat"></div></div>
+  </div></div>
+  <div id="mp-staff" class="mpanel"><div class="mgrid">
+    <div class="mform"><div class="mform-title" id="ftitle-staff">👤 スタッフを追加</div><input type="hidden" id="fid-staff">
+      <div class="fgroup"><label class="flabel">氏名 *</label><input class="finp" id="f-staff-name" placeholder="例: 田中 太郎"></div>
+      <div class="fgroup"><label class="flabel">役職</label><select class="finp" id="f-staff-role"><option>院長</option><option>医師</option><option>看護師</option><option>受付</option><option>事務</option><option>管理者</option></select></div>
+      <div class="fgroup"><label class="flabel">所属クリニック</label><select class="finp" id="f-staff-clinic"></select></div>
+      <div class="fgroup"><label class="flabel">権限</label><select class="finp" id="f-staff-perm"><option value="admin">管理者</option><option value="staff">スタッフ</option><option value="read">閲覧のみ</option></select></div>
+      <div class="fgroup"><label class="flabel">メール</label><input class="finp" id="f-staff-email" type="email" placeholder="例: tanaka@clinic.jp"></div>
+      <div class="btn-row"><button class="btn-save" onclick="mSave(&#39;staff&#39;)">保存する</button><button class="btn-clear" onclick="mReset(&#39;staff&#39;)">クリア</button></div>
+    </div>
+    <div class="mlist"><div class="mlist-head">スタッフ一覧</div><div id="mlist-staff"></div></div>
+  </div></div>
+  <div id="mp-supplier" class="mpanel"><div class="mgrid">
+    <div class="mform"><div class="mform-title" id="ftitle-supplier">🚚 サプライヤーを追加</div><input type="hidden" id="fid-supplier">
+      <div class="fgroup"><label class="flabel">会社名 *</label><input class="finp" id="f-supplier-name" placeholder="例: アラガン・ジャパン"></div>
+      <div class="fgroup"><label class="flabel">担当者名</label><input class="finp" id="f-supplier-person" placeholder="例: 山田 次郎"></div>
+      <div class="fgroup"><label class="flabel">電話番号</label><input class="finp" id="f-supplier-tel" placeholder="例: 03-1234-5678"></div>
+      <div class="fgroup"><label class="flabel">メール</label><input class="finp" id="f-supplier-email" type="email" placeholder="例: info@allergan.jp"></div>
+      <div class="fgroup"><label class="flabel">主な取扱品</label><input class="finp" id="f-supplier-items" placeholder="例: ボトックス、ジュビダーム"></div>
+      <div class="btn-row"><button class="btn-save" onclick="mSave(&#39;supplier&#39;)">保存する</button><button class="btn-clear" onclick="mReset(&#39;supplier&#39;)">クリア</button></div>
+    </div>
+    <div class="mlist"><div class="mlist-head">サプライヤー一覧</div><div id="mlist-supplier"></div></div>
+  </div></div>
+  <div id="mp-status" class="mpanel"><div class="mgrid">
+    <div class="mform"><div class="mform-title" id="ftitle-status">🏷️ ステータスを追加</div><input type="hidden" id="fid-status">
+      <div class="fgroup"><label class="flabel">ステータス名 *</label><input class="finp" id="f-status-name" placeholder="例: 要補充" oninput="statusPreview()"></div>
+      <div class="fgroup"><label class="flabel">カラー</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="color" id="f-status-color" value="#E05470" style="width:42px;height:34px;border:1.5px solid #D8E6F5;border-radius:7px;cursor:pointer;padding:2px" oninput="statusPreview()">
+          <span id="status-prev" style="flex:1;background:#FDEAEE;color:#E05470;border-radius:7px;padding:6px 12px;font-size:12.5px;font-weight:700;text-align:center">プレビュー</span>
+        </div>
+      </div>
+      <div class="fgroup"><label class="flabel">適用条件</label><select class="finp" id="f-status-cond"><option>在庫数が最小在庫数以下</option><option>在庫数が最小在庫数の1.5倍以下</option><option>在庫数が充足</option><option>期限切れ30日以内</option><option>手動設定</option></select></div>
+      <div class="fgroup"><label class="flabel">説明</label><input class="finp" id="f-status-desc" placeholder="例: 即発注が必要な状態"></div>
+      <div class="btn-row"><button class="btn-save" onclick="mSave(&#39;status&#39;)">保存する</button><button class="btn-clear" onclick="mReset(&#39;status&#39;)">クリア</button></div>
+    </div>
+    <div class="mlist"><div class="mlist-head">ステータス一覧</div><div id="mlist-status"></div></div>
+  </div></div>
+</div>
+
+<!-- インポート -->
+<div id="pg-import" class="page">
+  <div class="ph">
+    <div>
+      <div class="ph-title">📥 データインポート</div>
+      <div class="ph-sub">Excel（.xlsx）またはCSV（.csv）ファイルから在庫データを取り込みます</div>
+    </div>
+    <button class="btn-outline" onclick="downloadTemplate()">📄 テンプレートをDL</button>
+  </div>
+
+  <!-- ステップ表示 -->
+  <div id="imp-steps" style="display:flex;align-items:center;gap:0;margin-bottom:20px">
+    <div class="imp-step active" id="step1-ind"><span class="imp-snum">1</span><span class="imp-slbl">ファイル選択</span></div>
+    <div class="imp-stepline"></div>
+    <div class="imp-step" id="step2-ind"><span class="imp-snum">2</span><span class="imp-slbl">列の対応確認</span></div>
+    <div class="imp-stepline"></div>
+    <div class="imp-step" id="step3-ind"><span class="imp-snum">3</span><span class="imp-slbl">プレビュー・取り込み</span></div>
+  </div>
+
+  <!-- STEP1: ファイル選択 -->
+  <div id="imp-step1">
+    <!-- ドロップゾーン -->
+    <div id="imp-dropzone" class="imp-drop" ondragover="event.preventDefault();this.classList.add(&#39;drag&#39;)" ondragleave="this.classList.remove(&#39;drag&#39;)" ondrop="handleDrop(event)" onclick="document.getElementById(&#39;imp-file&#39;).click()">
+      <div class="imp-drop-icon">📂</div>
+      <div class="imp-drop-title">クリック、またはここにファイルをドロップ</div>
+      <div class="imp-drop-sub">Excel（.xlsx, .xls）・CSV（.csv）対応　／　最大10MB</div>
+      <input type="file" id="imp-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFileSelect(this)">
+    </div>
+
+    <!-- 列名ガイド -->
+    <div style="background:#fff;border-radius:14px;padding:20px;box-shadow:var(--sh);margin-top:14px">
+      <div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:14px">📋 取り込める列（どんな列名でもOK）</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div class="imp-col-card req"><div class="imp-col-name">製品名</div><div class="imp-col-ex">product, 品名, 製品, 商品名 など</div><span class="imp-col-badge req">必須</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">在庫数</div><div class="imp-col-ex">quantity, qty, 数量, 在庫 など</div><span class="imp-col-badge">推奨</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">クリニック / 院</div><div class="imp-col-ex">clinic, 院名, クリニック, 拠点 など</div><span class="imp-col-badge">推奨</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">カテゴリ</div><div class="imp-col-ex">category, 分類, カテゴリ など</div><span class="imp-col-badge">任意</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">有効期限</div><div class="imp-col-ex">expiry, 期限, 有効期限, 賞味 など</div><span class="imp-col-badge">任意</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">最小在庫数</div><div class="imp-col-ex">min, minimum, 最低在庫 など</div><span class="imp-col-badge">任意</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">単価</div><div class="imp-col-ex">price, unit_price, 価格, 単価 など</div><span class="imp-col-badge">任意</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">ロット番号</div><div class="imp-col-ex">lot, lot_no, ロット, ロット番号 など</div><span class="imp-col-badge">任意</span></div>
+        <div class="imp-col-card"><div class="imp-col-name">サプライヤー</div><div class="imp-col-ex">supplier, 仕入先, 業者 など</div><span class="imp-col-badge">任意</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP2: 列マッピング -->
+  <div id="imp-step2" style="display:none">
+    <div style="background:#fff;border-radius:14px;padding:22px;box-shadow:var(--sh)">
+      <div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:5px">🔗 列の対応を確認してください</div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:18px">ファイル内の列がどの項目に対応するかを確認・変更できます。</div>
+      <div id="imp-mapping" style="display:grid;grid-template-columns:1fr 48px 1fr;gap:8px;align-items:center;margin-bottom:20px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-clear" onclick="impBack()">← 戻る</button>
+        <button class="btn-save" style="width:auto;padding:9px 24px" onclick="impShowPreview()">プレビューへ →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP3: プレビュー -->
+  <div id="imp-step3" style="display:none">
+    <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--sh)">
+      <div style="padding:16px 20px;background:var(--surf);border-bottom:2px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--ink)">📋 取り込み内容のプレビュー</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:3px" id="imp-preview-count"></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;cursor:pointer">
+            <input type="radio" name="imp-mode" value="replace" checked="" onchange="updateImpModeLabel()"> 既存データを置き換える
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;cursor:pointer">
+            <input type="radio" name="imp-mode" value="merge" onchange="updateImpModeLabel()"> 既存データに追加する
+          </label>
+        </div>
+      </div>
+      <div id="imp-mode-warn" style="padding:8px 20px;background:#FEF4E4;border-bottom:1px solid #F5D88A;font-size:12px;color:#A06020;font-weight:600;display:none">
+        ⚠️ 「置き換え」を選択すると、現在の在庫データがすべて新しいデータで上書きされます。
+      </div>
+      <div class="tbl-wrap" style="max-height:360px;overflow-y:auto">
+        <table><thead><tr id="imp-thead"></tr></thead><tbody id="imp-tbody"></tbody></table>
+      </div>
+      <div style="padding:14px 20px;border-top:2px solid var(--bdr);display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn-clear" onclick="impBackToMapping()">← 戻る</button>
+        <button class="btn-save" style="width:auto;padding:9px 28px;font-size:14px" onclick="impExecute()">✓ 取り込む</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 完了メッセージ -->
+  <div id="imp-done" style="display:none;text-align:center;padding:48px 20px">
+    <div style="font-size:56px;margin-bottom:16px">✅</div>
+    <div style="font-family:&#39;Outfit&#39;,sans-serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:8px">インポート完了</div>
+    <div style="font-size:14px;color:#6EA8D4;margin-bottom:28px" id="imp-done-msg"></div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn-outline" onclick="impReset()">続けてインポート</button>
+      <button class="btn-primary" style="border-radius:20px;padding:8px 24px;font-size:13px" onclick="go(&#39;inventory&#39;,null)">在庫一覧を確認する →</button>
+    </div>
+  </div>
+</div>
+
+<!-- 設定 -->
+<div id="pg-settings" class="page">
+  <div class="ph"><div><div class="ph-title">⚙️ 設定</div><div class="ph-sub">運用モード・クリニック情報・アラート設定</div></div></div>
+
+  <!-- 運用モード（最重要） -->
+  <div style="background:#fff;border-radius:var(--r);padding:22px;box-shadow:var(--sh);margin-bottom:14px">
+    <div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:4px">🏥 運用モード</div>
+    <div style="font-size:12px;color:var(--ink3);margin-bottom:16px">登録されているクリニック数に応じて、不要な機能を自動的に非表示にします。</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="mode-cards">
+      <div class="mode-card" id="mode-single" onclick="setMode(&#39;single&#39;)">
+        <div class="mode-card-icon">🏥</div>
+        <div class="mode-card-title">1院モード</div>
+        <div class="mode-card-desc">院間移送・院別比較などの<br>複数院機能を非表示にします</div>
+        <div class="mode-check" id="mode-single-check">✓ 選択中</div>
+      </div>
+      <div class="mode-card active" id="mode-multi" onclick="setMode(&#39;multi&#39;)">
+        <div class="mode-card-icon">🏥🏥</div>
+        <div class="mode-card-title">複数院モード</div>
+        <div class="mode-card-desc">院間移送・院別在庫比較など<br>全機能を表示します</div>
+        <div class="mode-check" id="mode-multi-check">✓ 選択中</div>
+      </div>
+    </div>
+    <div id="mode-diff" style="margin-top:16px;padding:14px;background:var(--surf);border-radius:10px;font-size:12px;color:var(--ink3)"><strong style="color:var(--ink);font-size:12.5px">複数院モードでは以下が表示されます：</strong><br><br><span style="display:inline-block;margin-right:16px;margin-bottom:4px">✅ 院間移送ページ</span><span style="display:inline-block;margin-right:16px;margin-bottom:4px">✅ クイック移送パネル</span><span style="display:inline-block;margin-right:16px;margin-bottom:4px">✅ クリニック選択プルダウン</span><span style="display:inline-block;margin-right:16px;margin-bottom:4px">✅ クリニック列（在庫一覧）</span><span style="display:inline-block;margin-right:16px;margin-bottom:4px">✅ 院間移送アラート</span></div>
+  </div>
+
+  <div class="two">
+    <div style="background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)">
+      <div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:14px">🔔 アラート設定</div>
+      <div style="display:flex;align-items:center;padding:11px 0;border-bottom:1.5px solid var(--bdr)"><div style="flex:1"><div style="font-size:13px;font-weight:700">在庫不足アラート</div><div style="font-size:11px;color:var(--ink3);margin-top:1px">最小在庫数を下回ったとき通知</div></div><div class="toggle on" onclick="this.classList.toggle(&#39;on&#39;)"></div></div>
+      <div style="display:flex;align-items:center;padding:11px 0;border-bottom:1.5px solid var(--bdr)"><div style="flex:1"><div style="font-size:13px;font-weight:700">期限切れアラート（30日前）</div></div><div class="toggle on" onclick="this.classList.toggle(&#39;on&#39;)"></div></div>
+      <div style="display:flex;align-items:center;padding:11px 0;border-bottom:1.5px solid var(--bdr)"><div style="flex:1"><div style="font-size:13px;font-weight:700">期限切れアラート（7日前）</div></div><div class="toggle on" onclick="this.classList.toggle(&#39;on&#39;)"></div></div>
+      <div class="multi-only" style="align-items: center; padding: 11px 0px;"><div style="flex:1"><div style="font-size:13px;font-weight:700">院間移送アラート</div></div><div class="toggle on" onclick="this.classList.toggle(&#39;on&#39;)"></div></div>
+    </div>
+    <div style="background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)">
+      <div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:14px">🏥 クリニック情報</div>
+      <div class="fgroup"><label class="flabel">法人名</label><input class="finp" value="医療法人社団 田中クリニックグループ"></div>
+      <div class="fgroup"><label class="flabel">代表者名</label><input class="finp" value="田中 太郎"></div>
+      <div class="fgroup"><label class="flabel">管理者メール（発注確定メールの送信先）</label><input class="finp" id="admin-email" type="email" value="admin@tanaka-clinic.jp"></div>
+      <button class="btn-save" onclick="toast(&#39;✅&#39;,&#39;設定を保存しました&#39;)">保存する</button>
+      <div style="background:var(--skyp);border-radius:10px;padding:14px;margin-top:12px">
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:3px">現在のプラン</div>
+        <div style="font-family:&#39;Outfit&#39;,sans-serif;font-size:22px;font-weight:800;color:var(--skyd)">¥3,000<span style="font-size:11.5px;color:var(--ink3);font-weight:400">/月（税込）</span></div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px">次回請求: 2025年4月1日 · 3クリニック</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  適正在庫管理
+════════════════════════════════ -->
+<div id="pg-stockopt" class="page">
+  <div class="ph">
+    <div><div class="ph-title">🎯 適正在庫管理</div><div class="ph-sub">商品ごとの適正在庫設定・発注履歴からの見直し提案</div></div>
+  </div>
+
+  <!-- タブ -->
+  <div style="display:flex;gap:6px;margin-bottom:16px">
+    <button class="fb active" id="sopt-tab1" onclick="soptTab(1)">📋 適正在庫設定</button>
+    <button class="fb" id="sopt-tab2" onclick="soptTab(2)">🔍 見直し提案</button>
+  </div>
+
+  <!-- タブ1: 適正在庫設定 -->
+  <div id="sopt-panel1">
+    <div class="card" style="margin-bottom:14px">
+      <div class="ch"><div class="ch-title">📋 商品別 適正在庫設定</div><span style="font-size:12px;color:var(--ink3)">発注点・発注量・上限在庫を設定します</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>商品名</th><th>カテゴリ</th><th style="text-align:center">現在庫</th>
+            <th style="text-align:center">最小在庫<br><span style="font-weight:400;font-size:10px">（発注点）</span></th>
+            <th style="text-align:center">上限在庫</th>
+            <th style="text-align:center">発注量</th>
+            <th style="text-align:center">リードタイム<br><span style="font-weight:400;font-size:10px">（納期）</span></th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody id="sopt-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- タブ2: 見直し提案 -->
+  <div id="sopt-panel2" style="display:none">
+    <div style="background:var(--skyp);border:1.5px solid #A8D0F5;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:24px">💡</span>
+      <div>
+        <div style="font-size:13.5px;font-weight:800;color:var(--ink)">過去3ヶ月の発注・使用実績から適正在庫を自動提案します</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:3px">現在の設定と実績に乖離がある商品をハイライトしています</div>
+      </div>
+    </div>
+    <div id="sopt-proposals"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  キャンペーン分析
+════════════════════════════════ -->
+<div id="pg-campaign" class="page">
+  <div class="ph">
+    <div><div class="ph-title">🎪 キャンペーン分析</div><div class="ph-sub">キャンペーン期間の需要変動・効果を分析します</div></div>
+    <button class="btn-save" onclick="openM('modal-campaign-add')">＋ キャンペーン登録</button>
+  </div>
+
+  <!-- キャンペーン一覧 -->
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:14px;align-items:start">
+
+    <!-- 左：キャンペーン一覧 -->
+    <div class="card">
+      <div class="ch"><div class="ch-title">📅 登録キャンペーン</div></div>
+      <div id="campaign-list" style="padding:8px 0"></div>
+    </div>
+
+    <!-- 右：選択中キャンペーンの分析 -->
+    <div id="campaign-detail">
+      <div style="background:#fff;border-radius:var(--r);padding:40px;box-shadow:var(--sh);text-align:center;color:var(--ink3)">
+        <div style="font-size:32px;margin-bottom:12px">📊</div>
+        <div style="font-size:14px;font-weight:700">左からキャンペーンを選択してください</div>
+        <div style="font-size:12px;margin-top:6px">通常期との使用量比較を表示します</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="ov" id="modal-delivery">
+  <div class="modal" style="width:400px">
+    <div class="modal-title">📤 出庫（用途を選択）</div>
+    <div style="font-size:12px;color:var(--ink3);background:var(--skyp);padding:8px 12px;border-radius:8px;margin-bottom:14px">製品：<strong id="dlv-name" style="color:var(--ink)"></strong> ／ <span id="dlv-clinic"></span></div>
+    <div style="margin-bottom:14px">
+      <div class="dlv-opt active" onclick="selectPurpose(this,&#39;patient&#39;)"><div class="dlv-opt-icon">💉</div><div><div class="dlv-opt-name">患者使用</div><div class="dlv-opt-sub">施術・治療での使用</div></div><div class="dlv-check">✓</div></div>
+      <div class="dlv-opt" onclick="selectPurpose(this,&#39;discard&#39;)"><div class="dlv-opt-icon">🗑️</div><div><div class="dlv-opt-name">廃棄</div><div class="dlv-opt-sub">期限切れ・破損・品質不良など</div></div><div class="dlv-check">✓</div></div>
+      <div class="dlv-opt" onclick="selectPurpose(this,&#39;demo&#39;)"><div class="dlv-opt-icon">🧪</div><div><div class="dlv-opt-name">デモ</div><div class="dlv-opt-sub">デモ・トレーニング・サンプル提供</div></div><div class="dlv-check">✓</div></div>
+    </div>
+    <div class="fg" style="margin-bottom:0">
+      <div class="fg-g"><label>数量 *</label><input type="number" id="dlv-qty" min="1" value="1"></div>
+      <div class="fg-g"><label>担当者</label><input type="text" id="dlv-staff" placeholder="例: 田中 医師"></div>
+      <div class="fg-g full"><label>メモ（任意）</label><input type="text" id="dlv-memo" placeholder="例: 額ボトックス 20U"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM(&#39;modal-delivery&#39;)">キャンセル</button>
+      <button class="btn-mo-primary" onclick="submitDelivery()">出庫を記録する</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="modal-add">
+  <div class="modal">
+    <div class="modal-title">📦 入荷登録</div>
+    <div class="fg">
+      <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: ボトックス 100U（アラガン）"></div>
+      <div class="fg-g"><label>カテゴリ</label><select id="add-cat"><option value="injection">注射・点滴薬剤</option><option value="skincare">スキンケア製品</option><option value="device">医療機器・器具</option><option value="supply">消耗品</option></select></div>
+      <div class="fg-g"><label>クリニック</label><select id="add-clinic"><option>銀座本院</option><option>渋谷分院</option><option>新宿分院</option></select></div>
+      <div class="fg-g"><label>数量 *</label><input id="add-qty" type="number" placeholder="10" min="0"></div>
+      <div class="fg-g"><label>単価（円）</label><input id="add-price" type="number" placeholder="12000" min="0"></div>
+      <div class="fg-g"><label>最小在庫数</label><input id="add-min" type="number" placeholder="3" min="0"></div>
+      <div class="fg-g"><label>有効期限</label><input id="add-expiry" type="date"></div>
+      <div class="fg-g"><label>ロット番号</label><input id="add-lot" type="text" placeholder="BT2025-001"></div>
+      <div class="fg-g full"><label>サプライヤー</label><input id="add-supplier" type="text" placeholder="アラガン・ジャパン"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM(&#39;modal-add&#39;)">キャンセル</button>
+      <button class="btn-mo-primary" onclick="submitAdd()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="modal-user">
+  <div class="modal">
+    <div class="modal-title">👤 操作者の切り替え</div>
+    <p style="font-size:12px;color:var(--ink3);background:var(--skyp);padding:8px 12px;border-radius:8px;margin-bottom:13px">操作者名はすべての履歴に自動記録されます。</p>
+    <div class="uo" onclick="setUser(&#39;田中 院長&#39;,&#39;田&#39;)"><div class="uo-av">田</div><div><div class="uo-name">田中 院長</div><div class="uo-role">管理者 · 銀座本院</div></div><span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--skyp);color:var(--skyd);border:1.5px solid var(--sky);padding:2px 8px;border-radius:7px">管理者</span></div>
+    <div class="uo" onclick="setUser(&#39;山田 医師&#39;,&#39;山&#39;)"><div class="uo-av">山</div><div><div class="uo-name">山田 医師</div><div class="uo-role">医師 · 銀座本院</div></div></div>
+    <div class="uo" onclick="setUser(&#39;鈴木 看護師&#39;,&#39;鈴&#39;)"><div class="uo-av">鈴</div><div><div class="uo-name">鈴木 看護師</div><div class="uo-role">看護師 · 渋谷分院</div></div></div>
+    <div class="uo" onclick="setUser(&#39;佐藤 看護師&#39;,&#39;佐&#39;)"><div class="uo-av">佐</div><div><div class="uo-name">佐藤 看護師</div><div class="uo-role">看護師 · 新宿分院</div></div></div>
+    <div class="mfoot"><button class="btn-mo-ghost" onclick="closeM(&#39;modal-user&#39;)">閉じる</button></div>
+  </div>
+</div>
+
+<!-- キャンペーン登録モーダル -->
+<div class="ov" id="modal-campaign-add">
+  <div class="modal">
+    <div class="modal-title">🎪 キャンペーン登録</div>
+    <div class="fg">
+      <div class="fg-g full"><label>キャンペーン名 *</label><input id="cp-name" type="text" placeholder="例: 春のボトックスキャンペーン"></div>
+      <div class="fg-g"><label>開始日 *</label><input id="cp-start" type="date"></div>
+      <div class="fg-g"><label>終了日 *</label><input id="cp-end" type="date"></div>
+      <div class="fg-g full"><label>対象商品（複数可）</label><input id="cp-products" type="text" placeholder="例: ボトックス 100U, ジュビダーム ウルトラ4"></div>
+      <div class="fg-g full"><label>メモ</label><input id="cp-memo" type="text" placeholder="例: ボトックス20%オフキャンペーン"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM('modal-campaign-add')">キャンセル</button>
+      <button class="btn-mo-primary" onclick="
+        var n=document.getElementById('cp-name').value.trim();
+        var s=document.getElementById('cp-start').value;
+        var e=document.getElementById('cp-end').value;
+        if(!n||!s||!e){alert('キャンペーン名・開始日・終了日は必須です');return;}
+        var prods=document.getElementById('cp-products').value.split(',').map(function(x){return x.trim();}).filter(Boolean);
+        var memo=document.getElementById('cp-memo').value;
+        var days=Math.ceil((new Date(e)-new Date(s))/86400000)+1;
+        campaignData.unshift({id:Date.now(),name:n,start:s,end:e,products:prods.length?prods:['（商品未設定）'],memo:memo,normalUsage:{monthly:30},campaignUsage:{total:0,days:days}});
+        renderCampaignList();
+        closeM('modal-campaign-add');
+        document.getElementById('cp-name').value='';
+        document.getElementById('cp-start').value='';
+        document.getElementById('cp-end').value='';
+        document.getElementById('cp-products').value='';
+        document.getElementById('cp-memo').value='';
+        toast('✅','「'+n+'」を登録しました');
+      ">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 適正在庫編集モーダル -->
+<div class="ov" id="modal-stockopt-edit">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">🎯 適正在庫を設定</div>
+    <div style="font-size:12px;color:var(--ink3);background:var(--skyp);padding:8px 12px;border-radius:8px;margin-bottom:14px">商品：<strong id="sopt-edit-name" style="color:var(--ink)"></strong></div>
+    <input type="hidden" id="sopt-edit-id">
+    <div class="fg">
+      <div class="fg-g"><label>最小在庫数（発注点）</label><input id="sopt-min" type="number" min="0" placeholder="5"></div>
+      <div class="fg-g"><label>上限在庫数</label><input id="sopt-max" type="number" min="0" placeholder="30"></div>
+      <div class="fg-g"><label>発注量</label><input id="sopt-order-qty" type="number" min="0" placeholder="20"></div>
+      <div class="fg-g"><label>リードタイム（日数）</label><input id="sopt-lead" type="number" min="0" placeholder="3"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM('modal-stockopt-edit')">キャンセル</button>
+      <button class="btn-mo-primary" onclick="saveStockOpt()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const CLINICS={1:'銀座本院',2:'渋谷分院',3:'新宿分院'};
+let nid=200;
+var campaignData = [
+  {id:1, name:'春のボトックスキャンペーン', start:'2026-03-01', end:'2026-03-15', products:['ボトックス 100U（アラガン）'], memo:'ボトックス20%オフ', normalUsage:{monthly:52}, campaignUsage:{total:38,days:15}},
+  {id:2, name:'ヒアルロン酸特別キャンペーン', start:'2026-02-10', end:'2026-02-20', products:['ジュビダーム ウルトラ4','ヒアルロン酸 テオシアル 1ml'], memo:'バレンタイン企画', normalUsage:{monthly:30}, campaignUsage:{total:28,days:10}}
+];
+var selectedCampaignId = null;
+
+const alertData=[
+  {name:'ボトックス 100U（アラガン）',    clinic:'銀座本院',qty:2, lv:'critical',icon:'💉'},
+  {name:'ジュビダーム ウルトラ4',          clinic:'銀座本院',qty:1, lv:'critical',icon:'💉'},
+  {name:'ヒアルロン酸 テオシアル 1ml',    clinic:'渋谷分院',qty:1, lv:'critical',icon:'💉'},
+  {name:'プラセンタ注射液 2ml',            clinic:'新宿分院',qty:2, lv:'critical',icon:'💉'},
+  {name:'グルタチオン注射 200mg',          clinic:'銀座本院',qty:2, lv:'critical',icon:'💉'},
+  {name:'ビタミンC点滴 1000mg',           clinic:'渋谷分院',qty:3, lv:'warning', icon:'💉'},
+  {name:'注射針 30G（50本入）',            clinic:'銀座本院',qty:3, lv:'warning', icon:'📌'},
+  {name:'注射針 27G（50本入）',            clinic:'渋谷分院',qty:4, lv:'warning', icon:'📌'},
+  {name:'シリンジ 1ml（10本入）',          clinic:'新宿分院',qty:3, lv:'warning', icon:'📌'},
+  {name:'消毒用エタノール 500ml',          clinic:'渋谷分院',qty:4, lv:'warning', icon:'🧴'},
+  {name:'レチノールクリーム 50g',          clinic:'新宿分院',qty:6, lv:'warning', icon:'🧴'},
+  {name:'ヒアルロン酸美容液 30ml',        clinic:'銀座本院',qty:5, lv:'warning', icon:'🧴'},
+  {name:'アルブチン導入液 100ml',          clinic:'渋谷分院',qty:4, lv:'warning', icon:'🧴'},
+  {name:'EGF美容液 20ml',                  clinic:'新宿分院',qty:5, lv:'warning', icon:'🧴'},
+  {name:'保護テープ（50枚入）',            clinic:'銀座本院',qty:8, lv:'warning', icon:'📋'},
+  {name:'滅菌ガーゼ（10枚入）',            clinic:'渋谷分院',qty:6, lv:'warning', icon:'📋'},
+  {name:'医療用手袋 S（100枚入）',         clinic:'新宿分院',qty:7, lv:'warning', icon:'📋'},
+  {name:'医療用手袋 M（100枚入）',         clinic:'銀座本院',qty:6, lv:'warning', icon:'📋'},
+  {name:'局所麻酔クリーム 30g',            clinic:'渋谷分院',qty:3, lv:'warning', icon:'💊'},
+  {name:'冷却ジェル 200g',                  clinic:'新宿分院',qty:4, lv:'warning', icon:'🧴'},
+];
+const expiryData=[
+  {name:'ボツリヌストキシン A型',           clinic:'銀座本院',lot:'BT2024-112',qty:'3本',  date:'2026-04-05'},
+  {name:'ジュビダーム ウルトラ4',           clinic:'渋谷分院',lot:'JD2024-330',qty:'2本',  date:'2026-04-08'},
+  {name:'プラセンタ注射液',                 clinic:'新宿分院',lot:'PL2024-089',qty:'10A',  date:'2026-04-12'},
+  {name:'ヒアルロン酸 テオシアル',         clinic:'銀座本院',lot:'TH2024-330',qty:'2本',  date:'2026-04-15'},
+  {name:'ビタミンC点滴製剤',               clinic:'渋谷分院',lot:'VC2024-201',qty:'5本',  date:'2026-04-18'},
+  {name:'グルタチオン注射 200mg',           clinic:'新宿分院',lot:'GT2024-055',qty:'8A',   date:'2026-04-22'},
+  {name:'レチノールクリーム 50g',           clinic:'銀座本院',lot:'RC2024-488',qty:'4本',  date:'2026-04-28'},
+  {name:'EGF美容液 20ml',                   clinic:'渋谷分院',lot:'EG2024-110',qty:'6本',  date:'2026-05-03'},
+  {name:'局所麻酔クリーム 30g',             clinic:'新宿分院',lot:'AN2024-220',qty:'3本',  date:'2026-05-10'},
+  {name:'ビタミンCセラム 30ml',             clinic:'銀座本院',lot:'VS2024-201',qty:'5本',  date:'2026-05-14'},
+  {name:'アルブチン導入液 100ml',           clinic:'渋谷分院',lot:'AB2024-301',qty:'3本',  date:'2026-05-20'},
+  {name:'ヒアルロン酸美容液 30ml',         clinic:'新宿分院',lot:'HA2024-405',qty:'4本',  date:'2026-05-25'},
+  {name:'冷却ジェル 200g',                  clinic:'銀座本院',lot:'CG2024-502',qty:'6本',  date:'2026-06-01'},
+  {name:'医療用テープ（50枚入）',           clinic:'渋谷分院',lot:'MT2024-610',qty:'2箱',  date:'2026-06-08'},
+  {name:'プラセンタエキス 原液',            clinic:'新宿分院',lot:'PE2024-711',qty:'10ml', date:'2026-06-15'},
+  {name:'ナイアシンアミド液 50ml',          clinic:'銀座本院',lot:'NA2024-800',qty:'4本',  date:'2026-06-22'},
+  {name:'ペプチド美容液 25ml',              clinic:'渋谷分院',lot:'PP2024-901',qty:'5本',  date:'2026-07-01'},
+  {name:'酵素洗顔パウダー 75g',             clinic:'新宿分院',lot:'EZ2024-010',qty:'8本',  date:'2026-07-10'},
+  {name:'SPF50日焼け止め 50g',              clinic:'銀座本院',lot:'SP2024-111',qty:'6本',  date:'2026-07-18'},
+  {name:'ビタミンB12注射液',               clinic:'渋谷分院',lot:'B12024-200',qty:'12A',  date:'2026-07-25'},
+];
+const invData=[
+  {name:'ボトックス 100U（アラガン）',cat:'injection',clinic:'銀座本院',qty:2, min:5, expiry:'2026-04-07',lot:'BT2024-112'},
+  {name:'ジュビダーム ウルトラ4',     cat:'injection',clinic:'銀座本院',qty:1, min:3, expiry:'2026-06-15',lot:'JD2024-330'},
+  {name:'プラセンタ注射液',           cat:'injection',clinic:'渋谷分院',qty:18,min:10,expiry:'2026-04-18',lot:'PL2024-089'},
+  {name:'ビタミンC点滴製剤',         cat:'injection',clinic:'新宿分院',qty:12,min:8, expiry:'2026-04-24',lot:'VC2024-201'},
+  {name:'グルタチオン注射液',         cat:'injection',clinic:'渋谷分院',qty:25,min:10,expiry:'2026-06-01',lot:'GT2024-055'},
+  {name:'ヒアルロン酸 テオシアル',   cat:'injection',clinic:'銀座本院',qty:4, min:2, expiry:'2026-05-14',lot:'TH2024-330'},
+  {name:'レチノールクリーム 50g',    cat:'skincare', clinic:'銀座本院',qty:6, min:8, expiry:'2026-07-15',lot:'RC2024-488'},
+  {name:'ビタミンCセラム 30ml',      cat:'skincare', clinic:'渋谷分院',qty:14,min:5, expiry:'2027-02-10',lot:'VS2024-201'},
+  {name:'注射針 30G（50本入）',      cat:'supply',   clinic:'銀座本院',qty:3, min:5, expiry:'2029-01-01',lot:'NE2024-555'},
+  {name:'消毒用エタノール 500ml',    cat:'supply',   clinic:'渋谷分院',qty:4, min:6, expiry:'2028-03-01',lot:'ET2024-101'},
+];
+const catLabel={injection:'💉 注射・点滴',skincare:'🧴 スキンケア',supply:'📋 消耗品',device:'🔧 機器'};
+const histData=[
+  {type:'transfer',name:'ボトックス 100U → 渋谷分院',amt:'+5', user:'田中 院長', clinic:'銀座本院',time:'本日 15:12',icon:'🔀'},
+  {type:'use',     name:'ヒアルロン酸 テオシアル 使用',amt:'-1',user:'山田 医師',  clinic:'銀座本院',time:'本日 14:55',icon:'💉'},
+  {type:'use',     name:'ボトックス 100U 使用',        amt:'-2',user:'鈴木 看護師',clinic:'渋谷分院',time:'本日 14:30',icon:'💉'},
+  {type:'add',     name:'プラセンタ注射液 入荷',        amt:'+30',user:'田中 院長', clinic:'銀座本院',time:'本日 10:15',icon:'📦'},
+  {type:'transfer',name:'注射針 30G → 新宿分院',       amt:'+10',user:'田中 院長', clinic:'銀座本院',time:'昨日 17:40',icon:'🔀'},
+  {type:'use',     name:'ビタミンC点滴製剤 使用',       amt:'-3',user:'佐藤 看護師',clinic:'新宿分院',time:'昨日 13:05',icon:'💉'},
+  {type:'order',   name:'ジュビダーム ウルトラ4 発注',  amt:'5本',user:'田中 院長', clinic:'銀座本院',time:'昨日 10:22',icon:'🛒'},
+];
+let trHist=[
+  {time:'本日 15:12',prod:'ボトックス 100U',  route:'銀座→渋谷',qty:5, user:'田中 院長'},
+  {time:'昨日 17:40',prod:'注射針 30G',        route:'銀座→新宿',qty:10,user:'田中 院長'},
+  {time:'3日前',     prod:'グルタチオン注射液', route:'銀座→渋谷',qty:20,user:'山田 医師'},
+];
+let mData={
+  clinic:[
+    {id:1,name:'銀座本院',addr:'東京都中央区銀座1-1-1',   tel:'03-1111-2222',type:'main',  active:'1'},
+    {id:2,name:'渋谷分院',addr:'東京都渋谷区道玄坂2-2-2', tel:'03-3333-4444',type:'branch',active:'1'},
+    {id:3,name:'新宿分院',addr:'東京都新宿区新宿3-3-3',   tel:'03-5555-6666',type:'branch',active:'1'},
+  ],
+  cat:[
+    {id:1,name:'注射・点滴薬剤',icon:'💉',desc:'ボトックス・ヒアルロン酸など',storage:'冷蔵保存（2〜8℃）'},
+    {id:2,name:'スキンケア製品',icon:'🧴',desc:'美容液・クリームなど',        storage:'常温保存'},
+    {id:3,name:'医療機器・器具',icon:'🔧',desc:'照射チップ・器具類',          storage:'常温保存'},
+    {id:4,name:'消耗品',        icon:'📋',desc:'針・シリンジ・ガーゼなど',     storage:'常温保存'},
+  ],
+  staff:[
+    {id:1,name:'田中 太郎',  role:'院長',  clinic:'銀座本院',perm:'admin',email:'tanaka@clinic.jp'},
+    {id:2,name:'山田 花子',  role:'医師',  clinic:'銀座本院',perm:'staff',email:'yamada@clinic.jp'},
+    {id:3,name:'鈴木 さくら',role:'看護師',clinic:'渋谷分院',perm:'staff',email:'suzuki@clinic.jp'},
+    {id:4,name:'佐藤 あおい',role:'看護師',clinic:'新宿分院',perm:'staff',email:'sato@clinic.jp'},
+  ],
+  supplier:[
+    {id:1,name:'アラガン・ジャパン', person:'山田 次郎',tel:'03-9999-0001',email:'info@allergan.jp',  items:'ボトックス、ジュビダーム'},
+    {id:2,name:'アッヴィ合同会社',   person:'佐藤 三郎',tel:'03-9999-0002',email:'info@abbvie.jp',    items:'ジュビダーム各種'},
+    {id:3,name:'メルスモン製薬',     person:'高橋 四郎',tel:'03-9999-0003',email:'info@melsmon.jp',   items:'プラセンタ注射液'},
+    {id:4,name:'扶桑薬品工業',       person:'伊藤 五郎',tel:'06-9999-0004',email:'info@fuso-pharm.jp',items:'ビタミンC注射液'},
+  ],
+  status:[
+    {id:1,name:'要補充',      color:'#E05470',cond:'在庫数が最小在庫数以下',       desc:'即発注が必要'},
+    {id:2,name:'注意',        color:'#E09030',cond:'在庫数が最小在庫数の1.5倍以下',desc:'補充を検討'},
+    {id:3,name:'正常',        color:'#3AB87A',cond:'在庫数が充足',                 desc:'問題なし'},
+    {id:4,name:'期限切れ間近',color:'#C04060',cond:'期限切れ30日以内',             desc:'早急に対応'},
+  ],
+};
+
+function go(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nl').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('pg-'+name);
+  if(!pg)return;
+  pg.classList.add('active');
+  document.querySelectorAll('.nl').forEach(n=>{
+    if((n.getAttribute('onclick')||'').includes("'"+name+"'"))n.classList.add('active');
+  });
+  window.scrollTo(0,0);
+  if(name==='inventory')renderInv('all');
+  if(name==='history')  renderHist('all');
+  if(name==='expiry')   renderExpiryPage();
+  if(name==='transfer') renderTrHist();
+  if(name==='master')   {mRenderAll();fillStaffClinic();}
+  if(name==='import')   impReset();
+  if(name==='orders')   renderOrders();
+  if(name==='stockopt') renderSoptTable();
+  if(name==='campaign') renderCampaignList();
+}
+
+function renderAlerts(){
+  document.getElementById('al-list').innerHTML=alertData.map((a,i)=>`
+    <div class="arow">
+      <div class="apip ${a.lv}"></div>
+      <div class="ainfo">
+        <div class="aname">${a.icon} ${a.name}</div>
+        <div class="aclinic">🏥 ${a.clinic}</div>
+      </div>
+      <span class="achip ${a.lv}">残${a.qty}</span>
+      <button class="abtn" onclick="orderAlert(${i})">発注</button>
+    </div>`).join('');
+  document.getElementById('al-cnt').textContent=alertData.length+'件';
+}
+// 発注データ
+let ordersData = {
+  pending: [], // 発注待ち
+  done: [      // 確定済み（初期サンプル）
+    {time:'2025/03/15 10:00', name:'プラセンタ注射液',  clinic:'銀座本院', qty:'30A',  status:'入荷済み'},
+    {time:'2025/03/10 14:30', name:'注射針 30G',         clinic:'銀座本院', qty:'20箱', status:'入荷済み'},
+    {time:'2025/03/05 09:15', name:'ビタミンC注射液',    clinic:'渋谷分院', qty:'100A', status:'入荷済み'},
+  ],
+};
+
+function nowStr() {
+  const d = new Date();
+  return `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function addOrder(name, clinic, supplier, qty) {
+  // 同じ製品＋院がすでに待ちにあれば上書きしない
+  const exists = ordersData.pending.find(o => o.name===name && o.clinic===clinic);
+  if (exists) {
+    toast('ℹ️', `「${name}」はすでに発注待ちに登録されています`);
+    return;
+  }
+  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qty||'要確認', time: nowStr() });
+  renderOrders();
+  updateOrderBadge();
+  toast('🛒', `「${name}」を発注待ちに登録しました → 発注管理で確定してください`);
+}
+
+function confirmOrder(idx) {
+  const item = ordersData.pending[idx];
+  if (!item) return;
+
+  // 管理者メールアドレスを取得
+  const adminEmail = (document.getElementById('admin-email')?.value || '').trim();
+
+  // メール本文を組み立てる
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const timeStr = now.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+
+  const subject = encodeURIComponent(`【発注連絡】${item.name}（${item.clinic}）`);
+  const body = encodeURIComponent(
+`発注管理システム MediStock より自動生成
+
+━━━━━━━━━━━━━━━━━━━━━━
+　発注内容
+━━━━━━━━━━━━━━━━━━━━━━
+製品名　　：${item.name}
+クリニック：${item.clinic}
+推奨数量　：${item.qty}
+サプライヤー：${item.supplier}
+登録日時　：${dateStr} ${timeStr}
+━━━━━━━━━━━━━━━━━━━━━━
+
+※このメールはMediStockの発注確定操作により作成されました。
+※サプライヤーへの実際の発注はご自身でご連絡ください。
+※入荷後は在庫一覧より入荷登録をお願いします。
+
+MediStock - 美容クリニック向け在庫管理システム`
+  );
+
+  // メーラーを開く
+  if (adminEmail) {
+    window.location.href = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+  } else {
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    toast('⚠️', '設定画面で管理者メールを登録すると宛先が自動入力されます');
+  }
+
+  // データを確定済みに移動
+  item.status = '入荷待ち';
+  item.time = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  ordersData.done.unshift(item);
+  ordersData.pending.splice(idx, 1);
+  renderOrders();
+  updateOrderBadge();
+  toast('📧', `メーラーを開きました。送信後は入荷時に在庫登録をしてください`);
+}
+
+function cancelOrder(idx) {
+  const item = ordersData.pending[idx];
+  ordersData.pending.splice(idx, 1);
+  renderOrders();
+  updateOrderBadge();
+  toast('🗑️', `「${item.name}」の発注をキャンセルしました`);
+}
+
+function renderOrders() {
+  const pb = document.getElementById('orders-pending-body');
+  const db = document.getElementById('orders-done-body');
+  const pc = document.getElementById('orders-pending-cnt');
+  const dc = document.getElementById('orders-done-cnt');
+  if (!pb) return;
+
+  pc.textContent = ordersData.pending.length + '件';
+  pc.style.background = ordersData.pending.length ? 'var(--redp)' : 'var(--greenp)';
+  pc.style.color = ordersData.pending.length ? 'var(--red)' : 'var(--green)';
+  if (dc) dc.textContent = ordersData.done.length + '件';
+
+  pb.innerHTML = ordersData.pending.length === 0
+    ? `<tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr>`
+    : ordersData.pending.map((o,i) => `
+        <tr>
+          <td style="font-weight:700">${o.name}</td>
+          <td>${o.clinic}</td>
+          <td style="text-align:center;font-weight:700">${o.qty}</td>
+          <td style="color:var(--ink3)">${o.supplier}</td>
+          <td style="color:var(--ink3);font-size:11.5px">${o.time}</td>
+          <td>
+            <div style="display:flex;gap:5px">
+              <button class="btn-primary" style="font-size:11px;padding:4px 10px;border-radius:7px" onclick="confirmOrder(${i})">✓ 確定</button>
+              <button style="background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="cancelOrder(${i})">✕</button>
+            </div>
+          </td>
+        </tr>`).join('');
+
+  db.innerHTML = ordersData.done.map(o => `
+    <tr>
+      <td style="color:var(--ink3);font-size:11.5px">${o.time}</td>
+      <td style="font-weight:700">${o.name}</td>
+      <td>${o.clinic}</td>
+      <td style="text-align:center">${o.qty}</td>
+      <td><span class="chip ${o.status==='入荷済み'?'ok':o.status==='入荷待ち'?'warn':'sky'}">${o.status}</span></td>
+    </tr>`).join('');
+}
+
+function updateOrderBadge() {
+  // ナビのバッジを更新
+  document.querySelectorAll('.nl').forEach(nl => {
+    if ((nl.getAttribute('onclick')||'').includes("'orders'")) {
+      const b = nl.querySelector('.nbadge');
+      if (b) {
+        b.textContent = ordersData.pending.length;
+        b.style.display = ordersData.pending.length ? '' : 'none';
+      }
+    }
+  });
+}
+
+function orderAlert(i) {
+  const a = alertData[i];
+  addOrder(a.name, a.clinic, '—', `最小在庫：${a.qty}`);
+}
+
+function renderExpiry(){
+  const today=new Date();
+  document.getElementById('exp-list').innerHTML=expiryData.map(e=>{
+    const d=new Date(e.date);
+    const days=Math.ceil((d-today)/86400000);
+    const ds=(d.getMonth()+1)+'月'+d.getDate()+'日';
+    const c=days<=14?'var(--red)':days<=30?'var(--amber)':'var(--green)';
+    const bg=days<=14?'var(--redp)':days<=30?'var(--amberp)':'var(--greenp)';
+    const lv=days<=14?'緊急':days<=30?'注意':'正常';
+    return `<div class="erow">
+      <div class="einfo">
+        <div class="ename">${e.name}</div>
+        <div class="eclinic">${e.clinic} · ${e.qty}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
+        <div style="font-size:12.5px;font-weight:700;color:${c};white-space:nowrap">${ds}まで</div>
+        <span class="etag" style="background:${bg};color:${c};white-space:nowrap">残${days}日・${lv}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPU(){
+  const pu=[{n:'ボトックス 100U',c:89},{n:'ヒアルロン酸各種',c:67},{n:'プラセンタ注射',c:54},{n:'ビタミンC点滴',c:48},{n:'グルタチオン',c:32}];
+  document.getElementById('pu-list').innerHTML=pu.map(p=>`
+    <div class="prow">
+      <div class="pname">${p.n}</div>
+      <div class="pbar"><div class="pfill" style="width:${Math.round(p.c/89*100)}%"></div></div>
+      <div class="pcnt">${p.c}</div>
+    </div>`).join('');
+}
+
+function renderCS(){
+  const cs=[{n:'ボトックス 100U',g:8,s:4,sh:2},{n:'ヒアルロン酸',g:6,s:3,sh:3},{n:'プラセンタ注射',g:12,s:8,sh:5},{n:'注射針 30G',g:3,s:5,sh:4},{n:'ビタミンC',g:10,s:6,sh:4}];
+  document.getElementById('cs-list').innerHTML=
+    '<div class="csh"><span>製品名</span><span>銀座</span><span>渋谷</span><span>新宿</span></div>'+
+    cs.map(r=>`<div class="csr"><div class="csname">${r.n}</div><div class="csv ${r.g<=3?'lo':''}">${r.g}</div><div class="csv ${r.s<=3?'lo':''}">${r.s}</div><div class="csv ${r.sh<=3?'lo':''}">${r.sh}</div></div>`).join('');
+}
+
+function renderT3(){
+  const t3=[
+    {c:'銀座本院',items:[{n:'ボトックス 100U',v:52},{n:'ヒアルロン酸',v:38},{n:'ビタミンC点滴',v:28}]},
+    {c:'渋谷分院',items:[{n:'プラセンタ注射',v:31},{n:'ボトックス 100U',v:22},{n:'グルタチオン',v:18}]},
+    {c:'新宿分院',items:[{n:'ヒアルロン酸',v:29},{n:'プラセンタ注射',v:23},{n:'ビタミンC点滴',v:20}]},
+  ];
+  document.getElementById('t3-list').innerHTML=t3.map(c=>`
+    <div class="t3blk"><div class="t3lbl">🏥 ${c.c}</div>
+    ${c.items.map((it,i)=>`<div class="t3row"><div class="t3rank ${i===0?'g':''}">${i+1}</div><div class="t3name">${it.n}</div><div class="t3cnt">${it.v}回</div></div>`).join('')}
+    </div>`).join('');
+}
+
+function renderInv(filter){
+  const clinic=document.getElementById('csel')?.value||'all';
+  let data=filter==='low'?invData.filter(i=>i.qty<=i.min):filter==='all'?invData:invData.filter(i=>i.cat===filter);
+  if(clinic!=='all') data=data.filter(i=>i.clinic===CLINICS[+clinic]);
+  const today=new Date();
+  document.getElementById('inv-body').innerHTML=data.length===0
+    ?`<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--ink3)">該当する在庫がありません</td></tr>`
+    :data.map(item=>{
+    const low=item.qty<=item.min,warn=!low&&item.qty<=item.min*1.5;
+    const d=new Date(item.expiry),days=Math.ceil((d-today)/86400000);
+    const ec=days<30?'var(--red)':days<90?'var(--amber)':'var(--ink3)';
+    const st=low?'<span class="chip ng">要補充</span>':warn?'<span class="chip warn">注意</span>':'<span class="chip ok">正常</span>';
+    return `<tr>
+      <td style="font-weight:700">${item.name}</td>
+      <td><span class="chip sky">${catLabel[item.cat]||item.cat}</span></td>
+      <td>${item.clinic}</td>
+      <td style="text-align:center;font-size:15px;font-weight:800;color:${low?'var(--red)':'var(--ink)'}">${item.qty}</td>
+      <td style="text-align:center;color:var(--ink3)">${item.min}</td>
+      <td style="color:${ec};font-weight:600">${d.getMonth()+1}月${d.getDate()}日</td>
+      <td>${st}</td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn-primary" style="font-size:11px;padding:4px 9px;border-radius:7px" onclick="openDelivery(${invData.indexOf(item)})">出庫（用途）</button>
+        <button style="background:var(--surf);color:var(--ink3);border:1.5px solid #D8E6F5;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="addOrder('${item.name.replace(/'/g,"\\'")}','${item.clinic}','${item.supplier||'—'}','要確認')">発注</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  applyClinicColToTable();
+}
+function filterInv(el,cat){
+  document.querySelectorAll('#pg-inventory .fb').forEach(b=>b.classList.remove('active','danger'));
+  el.classList.add('active');if(cat==='low')el.classList.add('danger');
+  var s=document.getElementById('inv-search');if(s)s.value='';
+  renderInv(cat);
+}
+
+function filterInvSearch(q){
+  var keyword=q.trim().toLowerCase();
+  if(!keyword){renderInv('all');return;}
+  var clinic=document.getElementById('csel')?document.getElementById('csel').value:'all';
+  var today=new Date();
+  var data=invData.filter(function(i){return i.name.toLowerCase().includes(keyword)||(i.lot||'').toLowerCase().includes(keyword);});
+  if(clinic!=='all')data=data.filter(function(i){return i.clinic===CLINICS[+clinic];});
+  document.getElementById('inv-body').innerHTML=data.length===0
+    ?'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--ink3)">該当する在庫がありません</td></tr>'
+    :data.map(function(item){
+      var low=item.qty<=item.min,warn=!low&&item.qty<=item.min*1.5;
+      var d=new Date(item.expiry),days=Math.ceil((d-today)/86400000);
+      var ec=days<30?'var(--red)':days<90?'var(--amber)':'var(--ink3)';
+      var st=low?'<span class="chip ng">要補充</span>':warn?'<span class="chip warn">注意</span>':'<span class="chip ok">正常</span>';
+      return '<tr><td style="font-weight:700">'+item.name+'</td><td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td><td>'+item.clinic+'</td><td style="text-align:center;font-size:15px;font-weight:800;color:'+(low?'var(--red)':'var(--ink)')+'">'+item.qty+'</td><td style="text-align:center;color:var(--ink3)">'+item.min+'</td><td style="color:'+ec+';font-weight:600">'+(d.getMonth()+1)+'月'+d.getDate()+'日</td><td>'+st+'</td><td style="display:flex;gap:6px"><button class="btn-primary" style="font-size:11px;padding:5px 10px;border-radius:7px" onclick="openDelivery(\''+item.name+'\',\''+item.clinic+'\')">出庫（用途）</button><button style="background:var(--surf);color:var(--ink3);border:1.5px solid #D8E6F5;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="toast(\'🛒\',\'発注を登録しました\')">発注</button></td></tr>';
+    }).join('');
+}
+
+
+function renderHist(filter){
+  const data=filter==='all'?histData:histData.filter(h=>h.type===filter);
+  const bg={use:'var(--redp)',add:'var(--greenp)',transfer:'var(--skyp)',order:'var(--amberp)'};
+  document.getElementById('hist-list').innerHTML=data.map(h=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1.5px solid var(--bdr)" onmouseover="this.style.background='var(--surf)'" onmouseout="this.style.background=''">
+      <div style="width:34px;height:34px;border-radius:9px;background:${bg[h.type]};display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">${h.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${h.name}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:3px;display:flex;gap:7px;flex-wrap:wrap">
+          <span style="background:var(--surf);color:var(--ink2);border:1px solid var(--bdr);padding:1px 7px;border-radius:6px;font-weight:600">👤 ${h.user}</span>
+          <span>${h.time}</span>
+          <span style="background:var(--skyp);color:var(--skyd);padding:1px 7px;border-radius:6px;font-weight:600">🏥 ${h.clinic}</span>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:800;color:${h.amt.startsWith('-')?'var(--red)':h.amt.startsWith('+')?'var(--green)':'var(--skyd)'};flex-shrink:0">${h.amt}</div>
+    </div>`).join('');
+}
+function filterHist(el,type){
+  document.querySelectorAll('#pg-history .fb').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');renderHist(type);
+}
+
+function renderTrHist(){
+  document.getElementById('tr-hist').innerHTML=trHist.map(t=>`
+    <tr><td style="color:var(--ink3)">${t.time}</td><td style="font-weight:700">${t.prod}</td><td style="color:var(--skyd);font-weight:600">${t.route}</td><td style="text-align:center;font-weight:800">${t.qty}</td><td style="color:var(--ink3)">${t.user}</td></tr>`).join('');
+}
+function submitTransfer(){
+  const p=document.getElementById('tr-prod').value;
+  const q=parseInt(document.getElementById('tr-qty').value)||0;
+  const f=document.getElementById('tr-from').value;
+  const t=document.getElementById('tr-to').value;
+  if(p==='選択してください'){toast('⚠️','製品を選択してください');return}
+  if(q<=0){toast('⚠️','数量を入力してください');return}
+  if(f===t){toast('⚠️','移送元と移送先が同じです');return}
+  trHist.unshift({time:'たった今',prod:p,route:`${CLINICS[+f]}→${CLINICS[+t]}`,qty:q,user:document.getElementById('uname').textContent});
+  renderTrHist();
+  document.getElementById('tr-qty').value='';
+  document.getElementById('tr-note').value='';
+  toast('🔀',`${p} × ${q}（${CLINICS[+f]} → ${CLINICS[+t]}）`);
+}
+function doQTransfer(){
+  const p=document.getElementById('q-prod').value;
+  const q=parseInt(document.getElementById('q-qty').value)||0;
+  const f=document.getElementById('q-from').value;
+  const t=document.getElementById('q-to').value;
+  if(p.includes('選択')){toast('⚠️','製品を選択してください');return}
+  if(q<=0){toast('⚠️','数量を入力してください');return}
+  if(f===t){toast('⚠️','移送元と移送先が同じです');return}
+  document.getElementById('q-qty').value='';
+  toast('🔀',`${p} × ${q}（${CLINICS[+f]} → ${CLINICS[+t]}）`);
+}
+
+function renderExpiryPage(){
+  const today=new Date();
+  const all=expiryData.map(e=>{const d=new Date(e.date);return{...e,days:Math.ceil((d-today)/86400000),d}});
+  const u=all.filter(e=>e.days<=30).length,w=all.filter(e=>e.days>30&&e.days<=90).length,s=all.filter(e=>e.days>90).length;
+  document.getElementById('exp-stats').innerHTML=`
+    <div class="sc r"><div class="sc-icon">🚨</div><div class="sc-label">緊急（30日以内）</div><div class="sc-num">${u}</div><div class="sc-note">即対応が必要</div></div>
+    <div class="sc a"><div class="sc-icon">⚠️</div><div class="sc-label">要注意（90日以内）</div><div class="sc-num">${w}</div><div class="sc-note">計画的な使用を推奨</div></div>
+    <div class="sc g"><div class="sc-icon">✅</div><div class="sc-label">正常</div><div class="sc-num">${s}</div><div class="sc-note">問題なし</div></div>`;
+  document.getElementById('exp-tbl').innerHTML=all.sort((a,b)=>a.days-b.days).map(e=>{
+    const c=e.days<=30?'var(--red)':e.days<=90?'var(--amber)':'var(--green)';
+    const bg=e.days<=30?'var(--redp)':e.days<=90?'var(--amberp)':'var(--greenp)';
+    return `<tr><td style="font-weight:700">${e.name}</td><td>${e.clinic}</td><td style="color:var(--ink3);font-size:11.5px">${e.lot}</td><td style="text-align:center;font-weight:700">${e.qty}</td><td style="color:${c};font-weight:700">${e.d.getMonth()+1}月${e.d.getDate()}日</td><td style="text-align:center;font-weight:800;color:${c}">${e.days}日</td><td><span style="background:${bg};color:${c};border-radius:12px;padding:2px 9px;font-size:10.5px;font-weight:700">${e.days<=30?'緊急':e.days<=90?'注意':'正常'}</span></td></tr>`;
+  }).join('');
+}
+
+function mTab(el,name){
+  document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.mpanel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');document.getElementById('mp-'+name).classList.add('active');
+  mRenderList(name);if(name==='staff')fillStaffClinic();
+}
+function fillStaffClinic(){const sel=document.getElementById('f-staff-clinic');if(sel)sel.innerHTML=mData.clinic.map(c=>`<option value="${c.name}">${c.name}</option>`).join('');}
+function mRenderAll(){Object.keys(mData).forEach(k=>mRenderList(k));fillStaffClinic();}
+function hex2rgb(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`${r},${g},${b}`}
+function lighten(hex){return`rgba(${hex2rgb(hex)},0.12)`}
+function mRenderList(type){
+  const el=document.getElementById('mlist-'+type);if(!el)return;
+  const cnt=document.getElementById('mcnt-'+type);if(cnt)cnt.textContent=mData[type].length+'件';
+  if(type==='status'){
+    el.innerHTML=mData.status.map(s=>`<div class="mrow"><div class="mrow-icon" style="background:${lighten(s.color)};color:${s.color}">🏷️</div><div style="flex:1"><div class="mrow-name"><span style="background:${lighten(s.color)};color:${s.color};padding:2px 9px;border-radius:12px;font-size:12.5px;font-weight:700">${s.name}</span></div><div class="mrow-sub">${s.cond} · ${s.desc||''}</div></div><div class="mrow-btns"><button class="medit" onclick="mEdit('status',${s.id})">編集</button><button class="mdel" onclick="mDel('status',${s.id})">削除</button></div></div>`).join('');
+    return;
+  }
+  const icons={clinic:'🏥',cat:'📂',staff:'👤',supplier:'🚚'};
+  el.innerHTML=mData[type].map(item=>{
+    let sub='';
+    if(type==='clinic')sub=`${item.addr||''} · ${item.tel||''} · ${item.active==='1'?'<span style="color:var(--green)">稼働中</span>':'<span style="color:var(--red)">停止中</span>'}`;
+    if(type==='cat')   sub=`${item.desc||''} · ${item.storage}`;
+    if(type==='staff') sub=`${item.role} · ${item.clinic} · ${item.email||''}`;
+    if(type==='supplier')sub=`担当: ${item.person||''} · ${item.tel||''} · ${item.items||''}`;
+    return`<div class="mrow"><div class="mrow-icon">${type==='cat'?(item.icon||'📂'):icons[type]}</div><div style="flex:1"><div class="mrow-name">${item.name}</div><div class="mrow-sub">${sub}</div></div><div class="mrow-btns"><button class="medit" onclick="mEdit('${type}',${item.id})">編集</button><button class="mdel" onclick="mDel('${type}',${item.id})">削除</button></div></div>`;
+  }).join('');
+}
+function mEdit(type,id){
+  const item=mData[type].find(x=>x.id===id);if(!item)return;
+  document.getElementById('fid-'+type).value=id;
+  if(type==='clinic'){document.getElementById('f-clinic-name').value=item.name||'';document.getElementById('f-clinic-addr').value=item.addr||'';document.getElementById('f-clinic-tel').value=item.tel||'';document.getElementById('f-clinic-type').value=item.type||'main';document.getElementById('f-clinic-active').value=item.active||'1';}
+  else if(type==='cat'){document.getElementById('f-cat-name').value=item.name||'';document.getElementById('f-cat-icon').value=item.icon||'';document.getElementById('f-cat-desc').value=item.desc||'';document.getElementById('f-cat-storage').value=item.storage||'常温保存';}
+  else if(type==='staff'){document.getElementById('f-staff-name').value=item.name||'';document.getElementById('f-staff-role').value=item.role||'';document.getElementById('f-staff-clinic').value=item.clinic||'';document.getElementById('f-staff-perm').value=item.perm||'staff';document.getElementById('f-staff-email').value=item.email||'';}
+  else if(type==='supplier'){document.getElementById('f-supplier-name').value=item.name||'';document.getElementById('f-supplier-person').value=item.person||'';document.getElementById('f-supplier-tel').value=item.tel||'';document.getElementById('f-supplier-email').value=item.email||'';document.getElementById('f-supplier-items').value=item.items||'';}
+  else if(type==='status'){document.getElementById('f-status-name').value=item.name||'';document.getElementById('f-status-color').value=item.color||'#E05470';document.getElementById('f-status-cond').value=item.cond||'';document.getElementById('f-status-desc').value=item.desc||'';statusPreview();}
+  document.getElementById('ftitle-'+type).textContent='✏️ 編集中：'+item.name;
+}
+function mSave(type){
+  const nameEl=document.getElementById('f-'+type+'-name');
+  const name=nameEl?nameEl.value.trim():'';
+  if(!name){toast('⚠️','名前を入力してください');return}
+  const eid=parseInt(document.getElementById('fid-'+type).value)||0;
+  let data={name};
+  if(type==='clinic')   data={name,addr:document.getElementById('f-clinic-addr').value,tel:document.getElementById('f-clinic-tel').value,type:document.getElementById('f-clinic-type').value,active:document.getElementById('f-clinic-active').value};
+  if(type==='cat')      data={name,icon:document.getElementById('f-cat-icon').value,desc:document.getElementById('f-cat-desc').value,storage:document.getElementById('f-cat-storage').value};
+  if(type==='staff')    data={name,role:document.getElementById('f-staff-role').value,clinic:document.getElementById('f-staff-clinic').value,perm:document.getElementById('f-staff-perm').value,email:document.getElementById('f-staff-email').value};
+  if(type==='supplier') data={name,person:document.getElementById('f-supplier-person').value,tel:document.getElementById('f-supplier-tel').value,email:document.getElementById('f-supplier-email').value,items:document.getElementById('f-supplier-items').value};
+  if(type==='status')   data={name,color:document.getElementById('f-status-color').value,cond:document.getElementById('f-status-cond').value,desc:document.getElementById('f-status-desc').value};
+  if(eid){const i=mData[type].findIndex(x=>x.id===eid);mData[type][i]={...mData[type][i],...data};toast('✅',`「${name}」を更新しました`);}
+  else{mData[type].push({id:++nid,...data});toast('✅',`「${name}」を追加しました`);}
+  mReset(type);mRenderList(type);
+}
+function mDel(type,id){const item=mData[type].find(x=>x.id===id);mData[type]=mData[type].filter(x=>x.id!==id);mRenderList(type);toast('🗑️',`「${item.name}」を削除しました`);}
+function mReset(type){
+  document.getElementById('fid-'+type).value='';
+  ['name','addr','tel','icon','desc','person','email','items'].forEach(f=>{const el=document.getElementById('f-'+type+'-'+f);if(el)el.value='';});
+  const titles={clinic:'🏥 クリニックを追加',cat:'📂 カテゴリを追加',staff:'👤 スタッフを追加',supplier:'🚚 サプライヤーを追加',status:'🏷️ ステータスを追加'};
+  const t=document.getElementById('ftitle-'+type);if(t)t.textContent=titles[type]||'追加';
+}
+function statusPreview(){
+  const n=document.getElementById('f-status-name').value||'プレビュー';
+  const c=document.getElementById('f-status-color').value;
+  const p=document.getElementById('status-prev');
+  p.textContent=n;p.style.background=lighten(c);p.style.color=c;
+}
+
+let dlvPurpose='patient';
+function openDelivery(idx){
+  const item=invData[idx];if(!item){toast('⚠️','エラーが発生しました');return}
+  document.getElementById('dlv-name').textContent=item.name;
+  document.getElementById('dlv-clinic').textContent=item.clinic;
+  document.getElementById('dlv-qty').value=1;
+  document.getElementById('dlv-memo').value='';
+  document.getElementById('dlv-staff').value=document.getElementById('uname').textContent;
+  dlvPurpose='patient';
+  document.querySelectorAll('.dlv-opt').forEach(o=>o.classList.remove('active'));
+  document.querySelectorAll('.dlv-opt')[0].classList.add('active');
+  openM('modal-delivery');
+}
+function selectPurpose(el,purpose){
+  document.querySelectorAll('.dlv-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');dlvPurpose=purpose;
+}
+function submitDelivery(){
+  const qty=parseInt(document.getElementById('dlv-qty').value)||0;
+  if(qty<=0){toast('⚠️','数量を入力してください');return}
+  const labels={patient:'患者使用',discard:'廃棄',demo:'デモ'};
+  const icons={patient:'💉',discard:'🗑️',demo:'🧪'};
+  closeM('modal-delivery');
+  toast(icons[dlvPurpose],'出庫：'+document.getElementById('dlv-name').textContent+' × '+qty+'（'+labels[dlvPurpose]+'）');
+}
+
+function openM(id){document.getElementById(id).classList.add('open')}
+function closeM(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+
+function submitAdd() {
+  const name = document.getElementById('add-name').value.trim();
+  const qty  = parseInt(document.getElementById('add-qty').value) || 0;
+  if (!name) { toast('⚠️', '製品名を入力してください'); return; }
+
+  const newItem = {
+    id:     ++nid,
+    name,
+    cat:      document.getElementById('add-cat').value,
+    clinic:   document.getElementById('add-clinic').value,
+    qty,
+    min:      parseInt(document.getElementById('add-min').value) || 3,
+    price:    parseInt(document.getElementById('add-price').value) || 0,
+    expiry:   document.getElementById('add-expiry').value || '2027-12-31',
+    lot:      document.getElementById('add-lot').value.trim(),
+    supplier: document.getElementById('add-supplier').value.trim(),
+  };
+
+  invData.unshift(newItem);
+
+  // localStorage に保存
+  try { localStorage.setItem('medistock_inv', JSON.stringify(invData)); } catch(e) {}
+
+  // 在庫一覧を開いていれば即再描画
+  if (document.getElementById('pg-inventory').classList.contains('active')) {
+    renderInv('all');
+    // フィルターをリセット
+    document.querySelectorAll('#pg-inventory .fb').forEach(b => b.classList.remove('active', 'danger'));
+    document.querySelector('#pg-inventory .fb').classList.add('active');
+  }
+
+  // フォームをクリア
+  ['add-name','add-qty','add-price','add-min','add-expiry','add-lot','add-supplier']
+    .forEach(id => { document.getElementById(id).value = ''; });
+
+  closeM('modal-add');
+  refreshKPI();
+  toast('✅', `「${name}」を入荷登録しました（在庫：${qty}）`);
+}
+function setUser(name,initial){
+  document.getElementById('uname').textContent=name;
+  document.getElementById('uav').textContent=initial;
+  closeM('modal-user');toast('👤',`${name}として操作中`);
+}
+function onClinic(){
+  const v=document.getElementById('csel').value;
+  toast('🏥',(v==='all'?'全院統合':CLINICS[v])+'の在庫を表示中');
+  const pg=document.getElementById('pg-inventory');
+  if(pg&&pg.classList.contains('active')){
+    const activeBtn=document.querySelector('#pg-inventory .fb.active');
+    const m=activeBtn?activeBtn.getAttribute('onclick').match(/'([^']+)'/):null;
+    renderInv(m?m[1]:'all');
+  }
+}
+function toast(icon,msg){
+  const el=document.createElement('div');
+  el.className='toast';el.innerHTML=`<span>${icon}</span><span>${msg}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+
+// ══════════════════════════════
+// IMPORT
+// ══════════════════════════════
+
+// 列マッピング定義（候補キーワード → 内部フィールド名）
+const IMP_FIELDS = [
+  {key:'name',    label:'製品名',      required:true,  hints:['製品名','品名','製品','商品名','product','item','name','品目']},
+  {key:'qty',     label:'在庫数',      required:false, hints:['在庫数','数量','在庫','quantity','qty','stock','count']},
+  {key:'clinic',  label:'クリニック',   required:false, hints:['クリニック','院','院名','拠点','clinic','branch','location']},
+  {key:'cat',     label:'カテゴリ',     required:false, hints:['カテゴリ','分類','種別','category','type','class']},
+  {key:'expiry',  label:'有効期限',     required:false, hints:['有効期限','期限','賞味期限','使用期限','expiry','expiration','exp','expire']},
+  {key:'min',     label:'最小在庫数',   required:false, hints:['最小在庫','最低在庫','最小','minimum','min','min_stock']},
+  {key:'price',   label:'単価',         required:false, hints:['単価','価格','価額','price','unit_price','cost']},
+  {key:'lot',     label:'ロット番号',   required:false, hints:['ロット','ロット番号','lot','lot_no','batch']},
+  {key:'supplier',label:'サプライヤー', required:false, hints:['仕入先','サプライヤー','業者','メーカー','supplier','vendor','maker']},
+];
+
+let impRawData = [];    // パース後の生データ（行配列）
+let impHeaders = [];    // ファイルのヘッダー行
+let impMapping = {};    // {fieldKey: 列インデックス or null}
+let impParsed  = [];    // マッピング後の整形済みデータ
+
+function impReset() {
+  impRawData=[]; impHeaders=[]; impMapping={}; impParsed=[];
+  document.getElementById('imp-step1').style.display='';
+  document.getElementById('imp-step2').style.display='none';
+  document.getElementById('imp-step3').style.display='none';
+  document.getElementById('imp-done').style.display='none';
+  document.getElementById('imp-dropzone').classList.remove('drag');
+  document.getElementById('imp-file').value='';
+  setImpStep(1);
+}
+
+function setImpStep(n) {
+  [1,2,3].forEach(i=>{
+    const el=document.getElementById('step'+i+'-ind');
+    el.classList.remove('active','done');
+    if(i<n) el.classList.add('done');
+    if(i===n) el.classList.add('active');
+  });
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('imp-dropzone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) parseFile(file);
+}
+function handleFileSelect(input) {
+  if(input.files[0]) parseFile(input.files[0]);
+}
+
+function parseFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls','csv'].includes(ext)) {
+    toast('⚠️','対応していないファイル形式です（xlsx / xls / csv のみ）');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows;
+      if(ext==='csv') {
+        rows = parseCSV(e.target.result);
+      } else {
+        const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:false});
+      }
+      // 空行を除去
+      rows = rows.filter(r => r.some(c => String(c).trim()!==''));
+      if(rows.length < 2) { toast('⚠️','データが見つかりません（1行目をヘッダー行にしてください）'); return; }
+
+      impHeaders = rows[0].map(h=>String(h).trim());
+      impRawData = rows.slice(1);
+      autoMap();
+      showMappingUI();
+    } catch(err) {
+      toast('❌','ファイルの読み込みに失敗しました：'+err.message);
+    }
+  };
+  if(ext==='csv') reader.readAsText(file, 'UTF-8');
+  else reader.readAsArrayBuffer(file);
+}
+
+function parseCSV(text) {
+  // BOM除去
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const lines = text.split(/\r?\n/);
+  return lines.map(line=>{
+    const cells=[]; let cur='', inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){inQ=!inQ;}
+      else if(c===','&&!inQ){cells.push(cur.trim());cur='';}
+      else cur+=c;
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+function normalize(s){ return String(s).toLowerCase().replace(/[\s　_\-\/]/g,''); }
+
+function autoMap() {
+  impMapping = {};
+  IMP_FIELDS.forEach(f => {
+    let best = -1;
+    impHeaders.forEach((h,i)=>{
+      const nh = normalize(h);
+      if(f.hints.some(hint => normalize(hint)===nh || nh.includes(normalize(hint)) || normalize(hint).includes(nh))) {
+        if(best===-1) best=i;
+      }
+    });
+    impMapping[f.key] = best>=0 ? best : null;
+  });
+}
+
+function showMappingUI() {
+  const container = document.getElementById('imp-mapping');
+  container.innerHTML = IMP_FIELDS.map(f => {
+    const opts = impHeaders.map((h,i)=>`<option value="${i}" ${impMapping[f.key]===i?'selected':''}>${h}</option>`).join('');
+    return `
+      <div class="imp-map-lbl">${f.label}${f.required?' <span style="color:var(--red)">*</span>':''}</div>
+      <div class="imp-map-arrow">→</div>
+      <select class="imp-map-sel" onchange="impMapping['${f.key}']=this.value===''?null:parseInt(this.value)" data-field="${f.key}">
+        <option value="">（対応なし）</option>
+        ${opts}
+      </select>`;
+  }).join('');
+  document.getElementById('imp-step1').style.display='none';
+  document.getElementById('imp-step2').style.display='';
+  setImpStep(2);
+}
+
+function impBack() {
+  document.getElementById('imp-step2').style.display='none';
+  document.getElementById('imp-step1').style.display='';
+  setImpStep(1);
+}
+
+function impShowPreview() {
+  // 必須チェック
+  if(impMapping['name']===null || impMapping['name']===undefined) {
+    toast('⚠️','「製品名」列の対応を設定してください'); return;
+  }
+  const catMap = {'注射':'injection','injection':'injection','点滴':'injection',
+    'スキンケア':'skincare','skincare':'skincare','化粧':'skincare',
+    '消耗':'supply','supply':'supply','サプライ':'supply'};
+  function guesscat(v){
+    const s=String(v||'').toLowerCase();
+    for(const k in catMap){if(s.includes(k))return catMap[k];}
+    return 'injection';
+  }
+  function parseDate(v){
+    if(!v||String(v).trim()==='')return '';
+    // yyyy/mm/dd or yyyy-mm-dd
+    const m=String(v).match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    // dd/mm/yyyy or mm/dd/yyyy — assume yyyy/mm/dd first if year>31
+    return String(v).trim();
+  }
+  function g(row,key){
+    const idx=impMapping[key];
+    return (idx!==null&&idx!==undefined&&row[idx]!==undefined)?String(row[idx]).trim():'';
+  }
+
+  impParsed = impRawData.map((row,i)=>{
+    const name=g(row,'name');
+    if(!name) return null;
+    return {
+      id: 1000+i,
+      name,
+      qty: parseInt(g(row,'qty'))||0,
+      clinic: g(row,'clinic')||'銀座本院',
+      cat: guesscat(g(row,'cat')),
+      expiry: parseDate(g(row,'expiry'))||'2027-12-31',
+      min: parseInt(g(row,'min'))||3,
+      price: parseInt(String(g(row,'price')).replace(/[,¥,]/g,''))||0,
+      lot: g(row,'lot')||'',
+      supplier: g(row,'supplier')||'',
+    };
+  }).filter(Boolean);
+
+  if(!impParsed.length){toast('⚠️','有効なデータが見つかりません');return;}
+
+  // テーブルヘッダー
+  const cols=['製品名','クリニック','カテゴリ','在庫数','有効期限','最小在庫','単価','ロット'];
+  document.getElementById('imp-thead').innerHTML=cols.map(c=>`<th>${c}</th>`).join('');
+  const catL={injection:'💉 注射・点滴',skincare:'🧴 スキンケア',supply:'📋 消耗品',device:'🔧 機器'};
+  document.getElementById('imp-tbody').innerHTML=impParsed.slice(0,100).map(r=>`
+    <tr>
+      <td style="font-weight:700">${r.name}</td>
+      <td>${r.clinic}</td>
+      <td><span class="chip sky">${catL[r.cat]||r.cat}</span></td>
+      <td style="text-align:center;font-weight:800">${r.qty}</td>
+      <td style="color:var(--ink3)">${r.expiry||'—'}</td>
+      <td style="text-align:center">${r.min}</td>
+      <td style="text-align:right">${r.price?'¥'+r.price.toLocaleString():'—'}</td>
+      <td style="color:var(--ink3);font-size:11.5px">${r.lot||'—'}</td>
+    </tr>`).join('');
+  if(impParsed.length>100) {
+    document.getElementById('imp-tbody').innerHTML += `<tr><td colspan="8" style="text-align:center;color:var(--ink3);padding:12px">…他 ${impParsed.length-100} 件（上位100件を表示中）</td></tr>`;
+  }
+  document.getElementById('imp-preview-count').textContent = `${impParsed.length}件のデータを取り込みます`;
+  document.getElementById('imp-step2').style.display='none';
+  document.getElementById('imp-step3').style.display='';
+  setImpStep(3);
+  updateImpModeLabel();
+}
+
+function impBackToMapping() {
+  document.getElementById('imp-step3').style.display='none';
+  document.getElementById('imp-step2').style.display='';
+  setImpStep(2);
+}
+
+function updateImpModeLabel() {
+  const mode = document.querySelector('input[name="imp-mode"]:checked')?.value;
+  document.getElementById('imp-mode-warn').style.display = mode==='replace' ? '' : 'none';
+}
+
+function impExecute() {
+  const mode = document.querySelector('input[name="imp-mode"]:checked')?.value || 'replace';
+  if(mode==='replace') {
+    invData.length=0;
+    impParsed.forEach(r=>invData.push(r));
+  } else {
+    // merge: 同名+同院は更新、なければ追加
+    impParsed.forEach(r=>{
+      const idx=invData.findIndex(x=>x.name===r.name&&x.clinic===r.clinic);
+      if(idx>=0) invData[idx]={...invData[idx],...r};
+      else invData.push(r);
+    });
+  }
+  // localStorageに保存
+  try { localStorage.setItem('medistock_inv', JSON.stringify(invData)); } catch(e){}
+
+  document.getElementById('imp-step3').style.display='none';
+  document.getElementById('imp-done').style.display='';
+  document.getElementById('imp-done-msg').textContent =
+    `${impParsed.length}件の在庫データを${mode==='replace'?'置き換え':'追加'}ました（localStorageに保存済み）`;
+  // KPI更新
+  refreshKPI();
+}
+
+function refreshKPI() {
+  const low = invData.filter(i=>i.qty<=i.min).length;
+  document.querySelectorAll('.kpi')[0].querySelector('.kpi-num').textContent = invData.length;
+  document.querySelectorAll('.kpi')[1].querySelector('.kpi-num').textContent = low;
+  renderAlerts();
+}
+
+function downloadTemplate() {
+  const headers = ['製品名','在庫数','クリニック','カテゴリ','有効期限','最小在庫数','単価','ロット番号','サプライヤー'];
+  const sample  = [
+    ['ボトックス 100U（アラガン）',10,'銀座本院','注射・点滴薬剤','2026/04/30',3,12000,'BT2025-001','アラガン・ジャパン'],
+    ['ヒアルロン酸 1ml',5,'渋谷分院','注射・点滴薬剤','2026/06/15',2,18000,'HA2025-002','アッヴィ合同会社'],
+    ['注射針 30G',20,'銀座本院','消耗品','2029/01/01',5,800,'NE2025-003',''],
+  ];
+  let csv = headers.join(',') + '\n' + sample.map(r=>r.join(',')).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'medistock_template.csv';
+  a.click();
+  toast('📄','テンプレートCSVをダウンロードしました');
+}
+
+// ══════════════════════════════
+// 運用モード切り替え
+// ══════════════════════════════
+let currentMode = 'multi'; // デフォルト：複数院
+
+const MODE_DIFF = {
+  single: [
+    {hide:'✅ 院間移送ページ（ナビから非表示）'},
+    {hide:'✅ クイック移送パネル（ダッシュボード）'},
+    {hide:'✅ クリニック選択プルダウン（ナビ）'},
+    {hide:'✅ クリニック列（在庫一覧テーブル）'},
+    {hide:'✅ 院間移送アラート（アラート設定）'},
+  ],
+  multi: [
+    {show:'✅ 院間移送ページ'},
+    {show:'✅ クイック移送パネル'},
+    {show:'✅ クリニック選択プルダウン'},
+    {show:'✅ クリニック列（在庫一覧）'},
+    {show:'✅ 院間移送アラート'},
+  ],
+};
+
+function setMode(mode) {
+  currentMode = mode;
+  try { localStorage.setItem('medistock_mode', mode); } catch(e) {}
+
+  // カードのactive切り替え
+  document.getElementById('mode-single').classList.toggle('active', mode==='single');
+  document.getElementById('mode-multi').classList.toggle('active',  mode==='multi');
+
+  // multi-only要素の表示切り替え
+  document.querySelectorAll('.multi-only').forEach(el => {
+    el.style.display = mode==='multi' ? '' : 'none';
+  });
+
+  // ダッシュボードのグリッド列数調整
+  const dmain = document.querySelector('.d-main');
+  if(dmain) {
+    dmain.style.gridTemplateColumns = mode==='multi'
+      ? 'minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr)'
+      : 'minmax(0,1fr) minmax(0,1fr)';
+  }
+
+  // 在庫一覧のクリニック列（td）を動的に制御
+  applyClinicColToTable();
+
+  // 差分説明更新
+  const items = MODE_DIFF[mode];
+  document.getElementById('mode-diff').innerHTML =
+    '<strong style="color:var(--ink);font-size:12.5px">' +
+    (mode==='single' ? '1院モードでは以下が非表示になります：' : '複数院モードでは以下が表示されます：') +
+    '</strong><br><br>' +
+    items.map(i=>`<span style="display:inline-block;margin-right:16px;margin-bottom:4px">${i.hide||i.show}</span>`).join('');
+
+  toast('🏥', mode==='single' ? '1院モードに切り替えました' : '複数院モードに切り替えました');
+}
+
+function applyClinicColToTable() {
+  // tbody内のクリニックtdを表示/非表示
+  document.querySelectorAll('#inv-body tr').forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if(tds[2]) tds[2].style.display = currentMode==='multi' ? '' : 'none';
+  });
+}
+
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('medistock_inv');
+    if(saved) {
+      const parsed = JSON.parse(saved);
+      if(Array.isArray(parsed) && parsed.length) {
+        invData.length=0;
+        parsed.forEach(r=>invData.push(r));
+        toast('💾', `保存データを復元しました（${parsed.length}件）`);
+      }
+    }
+  } catch(e){}
+}
+
+(function(){
+  const now=new Date();
+  document.getElementById('dash-date').textContent=
+    now.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+' ｜ 全3院の在庫状況';
+  loadFromStorage();
+  // モード復元
+  try {
+    const savedMode = localStorage.getItem('medistock_mode');
+    if(savedMode) { currentMode=savedMode; }
+  } catch(e) {}
+  setMode(currentMode);
+  renderAlerts();renderExpiry();renderPU();renderCS();renderT3();renderTrHist();mRenderAll();
+})();
+
+// ══════════════════════════════════════════════
+// 適正在庫管理
+// ══════════════════════════════════════════════
+
+// 適正在庫データ（初回アクセス時に生成）
+var stockOptData = null;
+function getStockOptData() {
+  if(!stockOptData) {
+    stockOptData = invData.map(function(item) { return {
+      id: item.id || item.name,
+      name: item.name,
+      cat: item.cat,
+      clinic: item.clinic,
+      currentQty: item.qty,
+      min: item.min || 5,
+      max: item.max || (item.min || 5) * 4,
+      orderQty: item.orderQty || (item.min || 5) * 2,
+      leadDays: item.leadDays || 3,
+      monthlyUsage: [
+        Math.floor(Math.random()*20)+5,
+        Math.floor(Math.random()*20)+5,
+        Math.floor(Math.random()*20)+5
+      ]
+    };});
+  }
+  return stockOptData;
+}
+
+function soptTab(n) {
+  document.getElementById('sopt-tab1').classList.toggle('active', n===1);
+  document.getElementById('sopt-tab2').classList.toggle('active', n===2);
+  document.getElementById('sopt-panel1').style.display = n===1 ? '' : 'none';
+  document.getElementById('sopt-panel2').style.display = n===2 ? '' : 'none';
+  if(n===2) renderSoptProposals();
+}
+
+function renderSoptTable() {
+  var tbody = document.getElementById('sopt-body');
+  if(!tbody) return;
+  var data = getStockOptData();
+  tbody.innerHTML = data.map(function(item, i) {
+    var avgUsage = Math.round(item.monthlyUsage.reduce(function(a,b){return a+b;},0) / item.monthlyUsage.length);
+    var statusColor = item.currentQty <= item.min ? 'var(--red)' : item.currentQty >= item.max ? 'var(--amber)' : 'var(--green)';
+    var statusBg    = item.currentQty <= item.min ? 'var(--redp)' : item.currentQty >= item.max ? 'var(--amberp)' : 'var(--greenp)';
+    var statusLabel = item.currentQty <= item.min ? '要補充' : item.currentQty >= item.max ? '過剰' : '正常';
+    return '<tr id="sopt-row-'+i+'">'
+      + '<td style="font-weight:700">'+item.name+'</td>'
+      + '<td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td>'
+      + '<td style="text-align:center;font-weight:800;color:'+statusColor+'">'+item.currentQty+'</td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.min+'" min="0" id="sopt-min-'+i+'" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].min=+this.value;updateSoptRow('+i+')"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.max+'" min="0" id="sopt-max-'+i+'" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].max=+this.value;updateSoptRow('+i+')"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.orderQty+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].orderQty=+this.value"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.leadDays+'" min="0" style="width:50px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].leadDays=+this.value"></td>'
+      + '<td><span id="sopt-status-'+i+'" style="font-size:11px;background:'+statusBg+';color:'+statusColor+';padding:2px 8px;border-radius:10px;font-weight:700">'+statusLabel+'</span></td>'
+      + '</tr>';
+  }).join('');
+}
+
+function updateSoptRow(i) {
+  var item = getStockOptData()[i];
+  var statusColor = item.currentQty <= item.min ? 'var(--red)' : item.currentQty >= item.max ? 'var(--amber)' : 'var(--green)';
+  var statusBg    = item.currentQty <= item.min ? 'var(--redp)' : item.currentQty >= item.max ? 'var(--amberp)' : 'var(--greenp)';
+  var statusLabel = item.currentQty <= item.min ? '要補充' : item.currentQty >= item.max ? '過剰' : '正常';
+  var el = document.getElementById('sopt-status-'+i);
+  if(el) {
+    el.textContent = statusLabel;
+    el.style.color = statusColor;
+    el.style.background = statusBg;
+  }
+  // 現在庫の色も更新
+  var row = document.getElementById('sopt-row-'+i);
+  if(row) row.cells[2].style.color = statusColor;
+}
+
+function renderSoptProposals() {
+  const el = document.getElementById('sopt-proposals');
+  if(!el) return;
+  const proposals = getStockOptData().map(item => {
+    const avgUsage = Math.round(item.monthlyUsage.reduce((a,b)=>a+b,0)/item.monthlyUsage.length);
+    const recommended_min = Math.ceil(avgUsage * (item.leadDays/30) * 1.5);
+    const recommended_max = recommended_min * 3;
+    const diff_min = recommended_min - item.min;
+    const issues = [];
+    if(Math.abs(diff_min) >= 3) issues.push({
+      type: diff_min > 0 ? 'up' : 'down',
+      msg: `最小在庫を${item.min}→<strong>${recommended_min}</strong>に${diff_min>0?'引き上げ':'引き下げ'}推奨`,
+      reason: `月平均使用量${avgUsage}本・リードタイム${item.leadDays}日から算出`
+    });
+    if(item.currentQty > item.max) issues.push({
+      type: 'warn',
+      msg: `現在庫(${item.currentQty})が上限在庫(${item.max})を超えています`,
+      reason: '過剰在庫・期限切れリスクがあります'
+    });
+    return {item, avgUsage, recommended_min, recommended_max, issues};
+  }).filter(p => p.issues.length > 0);
+
+  if(proposals.length === 0) {
+    el.innerHTML = `<div style="background:#fff;border-radius:var(--r);padding:40px;box-shadow:var(--sh);text-align:center;color:var(--ink3)">
+      <div style="font-size:32px;margin-bottom:12px">✅</div>
+      <div style="font-size:14px;font-weight:700;color:var(--ink)">すべての商品の適正在庫設定は適切です</div>
+    </div>`;
+    return;
+  }
+
+  el.innerHTML = proposals.map(p => `
+    <div style="background:#fff;border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);margin-bottom:10px;border-left:4px solid ${p.issues[0].type==='up'?'var(--sky)':p.issues[0].type==='down'?'var(--amber)':'var(--red)'}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--ink)">${p.item.name}</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:2px">${p.item.clinic} ｜ 月平均使用量：<strong>${p.avgUsage}本</strong></div>
+        </div>
+        <div style="text-align:right;font-size:12px;color:var(--ink3)">
+          現在庫：<strong style="font-size:16px;color:var(--ink)">${p.item.currentQty}</strong>
+        </div>
+      </div>
+      ${p.issues.map(iss => `
+        <div style="background:${iss.type==='up'?'var(--skyp)':iss.type==='down'?'var(--amberp)':'var(--redp)'};border-radius:8px;padding:10px 14px;margin-bottom:6px">
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">${iss.type==='up'?'📈':iss.type==='down'?'📉':'⚠️'} ${iss.msg}</div>
+          <div style="font-size:11.5px;color:var(--ink3);margin-top:3px">${iss.reason}</div>
+        </div>`).join('')}
+      <button style="margin-top:8px;background:var(--sky);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="applyProposal('${p.item.name}',${p.recommended_min},${p.recommended_max})">提案を適用する</button>
+    </div>`).join('');
+}
+
+function applyProposal(name, min, max) {
+  const item = getStockOptData().find(i => i.name === name);
+  if(item) { item.min = min; item.max = max; }
+  toast('✅', `「${name}」の適正在庫を更新しました（最小：${min}、上限：${max}）`);
+  renderSoptProposals();
+}
+
+// ══════════════════════════════════════════════
+// キャンペーン分析
+// ══════════════════════════════════════════════
+
+function renderCampaignList() {
+  const el = document.getElementById('campaign-list');
+  if(!el) return;
+  if(campaignData.length === 0) {
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--ink3);font-size:13px">キャンペーンが登録されていません</div>`;
+    return;
+  }
+  el.innerHTML = campaignData.map(cp => {
+    const days = Math.ceil((new Date(cp.end)-new Date(cp.start))/86400000)+1;
+    const isSelected = cp.id === selectedCampaignId;
+    return `<div onclick="selectCampaign(${cp.id})" style="padding:14px 18px;border-bottom:1.5px solid var(--bdr);cursor:pointer;background:${isSelected?'var(--skyp)':''};transition:background .12s">
+      <div style="font-size:13.5px;font-weight:700;color:var(--ink)">${cp.name}</div>
+      <div style="font-size:11.5px;color:var(--ink3);margin-top:3px">${cp.start} 〜 ${cp.end}（${days}日間）</div>
+      <div style="font-size:11px;color:var(--skyd);margin-top:3px">${cp.products.join('、')}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectCampaign(id) {
+  selectedCampaignId = id;
+  renderCampaignList();
+  const cp = campaignData.find(c => c.id === id);
+  if(!cp) return;
+  const days = Math.ceil((new Date(cp.end)-new Date(cp.start))/86400000)+1;
+  const normalDaily = (cp.normalUsage.monthly / 30).toFixed(1);
+  const campTotal = cp.campaignUsage.total || 0;
+  const campaignDaily = campTotal > 0 ? (campTotal / cp.campaignUsage.days).toFixed(1) : '0.0';
+  const ratio = normalDaily > 0 ? (campaignDaily / normalDaily).toFixed(1) : '1.0';
+  const isUp = parseFloat(campaignDaily) > parseFloat(normalDaily);
+
+  // KPIカード3枚
+  let kpiHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">';
+  kpiHtml += '<div style="background:var(--surf);border-radius:10px;padding:14px;text-align:center">';
+  kpiHtml += '<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">通常期（日平均）</div>';
+  kpiHtml += '<div style="font-family:\'Outfit\',sans-serif;font-size:28px;font-weight:800;color:var(--ink)">' + normalDaily + '<span style="font-size:12px;font-weight:500">本/日</span></div>';
+  kpiHtml += '<div style="font-size:11px;color:var(--ink3);margin-top:4px">月' + cp.normalUsage.monthly + '本ベース</div></div>';
+  const c2bg = isUp ? 'var(--skyp)' : 'var(--amberp)';
+  const c2bd = isUp ? 'var(--sky)' : 'var(--amber)';
+  const c2cl = isUp ? 'var(--skyd)' : 'var(--amber)';
+  kpiHtml += '<div style="background:' + c2bg + ';border-radius:10px;padding:14px;text-align:center;border:2px solid ' + c2bd + '">';
+  kpiHtml += '<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">キャンペーン期（日平均）</div>';
+  kpiHtml += '<div style="font-family:\'Outfit\',sans-serif;font-size:28px;font-weight:800;color:' + c2cl + '">' + campaignDaily + '<span style="font-size:12px;font-weight:500">本/日</span></div>';
+  kpiHtml += '<div style="font-size:11px;color:var(--ink3);margin-top:4px">計' + campTotal + '本 / ' + days + '日間</div></div>';
+  const c3bg = isUp ? '#E5F8EE' : 'var(--amberp)';
+  const c3cl = isUp ? 'var(--green)' : 'var(--amber)';
+  kpiHtml += '<div style="background:' + c3bg + ';border-radius:10px;padding:14px;text-align:center;border:2px solid ' + c3cl + '">';
+  kpiHtml += '<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">通常比</div>';
+  kpiHtml += '<div style="font-family:\'Outfit\',sans-serif;font-size:28px;font-weight:800;color:' + c3cl + '">' + ratio + '倍</div>';
+  kpiHtml += '<div style="font-size:11px;color:' + c3cl + ';margin-top:4px;font-weight:700">' + (isUp ? '▲ 需要増加' : '▼ 通常以下') + '</div></div>';
+  kpiHtml += '</div>';
+
+  // 商品別棒グラフ
+  let barHtml = '';
+  cp.products.forEach(function(prod) {
+    const normal = cp.normalUsage.monthly;
+    const campaign = Math.round(campTotal * (cp.campaignUsage.days / days)) || 0;
+    const maxVal = Math.max(normal, campaign, 1);
+    const barColor = isUp ? 'var(--green)' : 'var(--amber)';
+    barHtml += '<div style="margin-bottom:16px">';
+    barHtml += '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">' + prod + '</div>';
+    barHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+    barHtml += '<div style="width:80px;font-size:12px;color:var(--ink3);text-align:right">通常期/月</div>';
+    barHtml += '<div style="flex:1;height:24px;background:var(--surf);border-radius:4px;overflow:hidden">';
+    barHtml += '<div style="height:100%;width:' + Math.round(normal/maxVal*100) + '%;background:var(--sky);border-radius:4px;display:flex;align-items:center;padding:0 8px">';
+    barHtml += '<span style="font-size:11px;font-weight:700;color:#fff">' + normal + '本</span></div></div></div>';
+    barHtml += '<div style="display:flex;align-items:center;gap:10px">';
+    barHtml += '<div style="width:80px;font-size:12px;color:var(--ink3);text-align:right">キャンペーン</div>';
+    barHtml += '<div style="flex:1;height:24px;background:var(--surf);border-radius:4px;overflow:hidden">';
+    barHtml += '<div style="height:100%;width:' + Math.round(campaign/maxVal*100) + '%;background:' + barColor + ';border-radius:4px;display:flex;align-items:center;padding:0 8px">';
+    barHtml += '<span style="font-size:11px;font-weight:700;color:#fff">' + campaign + '本</span></div></div></div></div>';
+  });
+
+  // 次回発注提案
+  let propHtml = '';
+  cp.products.forEach(function(prod) {
+    const extra = Math.max(0, Math.round(campTotal * (ratio - 1)));
+    propHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1.5px solid rgba(91,164,229,.2)">';
+    propHtml += '<div style="font-size:13px;font-weight:700;color:var(--ink)">' + prod + '</div>';
+    propHtml += '<div style="font-size:13px;color:var(--skyd);font-weight:700">通常発注量 ＋ <strong style="font-size:16px">' + extra + '</strong> 本を追加推奨</div></div>';
+  });
+
+  document.getElementById('campaign-detail').innerHTML =
+    '<div>' +
+    '<div style="background:#fff;border-radius:var(--r);padding:22px;box-shadow:var(--sh);margin-bottom:14px">' +
+    '<div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px">🎪 ' + cp.name + '</div>' +
+    '<div style="font-size:12.5px;color:var(--ink3)">' + cp.start + ' 〜 ' + cp.end + '（' + days + '日間）｜ ' + (cp.memo||'') + '</div>' +
+    kpiHtml + '</div>' +
+    '<div style="background:#fff;border-radius:var(--r);padding:22px;box-shadow:var(--sh);margin-bottom:14px">' +
+    '<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:16px">📊 対象商品の通常期 vs キャンペーン期比較</div>' +
+    barHtml + '</div>' +
+    '<div style="background:var(--skyp);border:1.5px solid #A8D0F5;border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh)">' +
+    '<div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:10px">💡 次回キャンペーン発注提案</div>' +
+    propHtml +
+    '<div style="font-size:11.5px;color:var(--ink3);margin-top:10px">※ 前回キャンペーン実績（通常比' + ratio + '倍）をもとに算出</div>' +
+    '</div></div>';
+}
+
+function saveCampaign() {
+  const name = document.getElementById('cp-name').value.trim();
+  const start = document.getElementById('cp-start').value;
+  const end = document.getElementById('cp-end').value;
+  if(!name||!start||!end){toast('⚠️','キャンペーン名・開始日・終了日は必須です');return;}
+  const products = document.getElementById('cp-products').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const memo = document.getElementById('cp-memo').value;
+  campaignData.unshift({
+    id: Date.now(), name, start, end,
+    products: products.length?products:['（商品未設定）'],
+    memo,
+    normalUsage:{monthly:30},
+    campaignUsage:{total:0,days:Math.ceil((new Date(end)-new Date(start))/86400000)+1}
+  });
+  renderCampaignList();
+  closeM('modal-campaign-add');
+  ['cp-name','cp-start','cp-end','cp-products','cp-memo'].forEach(id=>document.getElementById(id).value='');
+  toast('✅',`「${name}」を登録しました`);
+}
+
+// ページ遷移はgo()に統合済み
+</script>
+
+
+
+</body></html>
