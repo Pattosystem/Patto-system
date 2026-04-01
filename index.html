@@ -1363,11 +1363,13 @@ async function loadInventoryFromDB() {
     // 在庫一覧ページが表示中なら更新
     var invPage = document.getElementById('pg-inventory');
     if(invPage && invPage.classList.contains('active')){
-      renderInv('all');
+      try{ renderInv('all'); }catch(e){ console.log('renderInv error:',e); }
     }
-    // ダッシュボードの数値も安全に更新
+    // 各render関数を安全に呼び出す
     try{ renderAlerts(); }catch(e){}
     try{ renderPU(); }catch(e){}
+    try{ renderCS(); }catch(e){}
+    try{ renderT3(); }catch(e){}
   }
 }
 
@@ -1749,19 +1751,23 @@ function renderPU(){
 }
 
 function renderCS(){
+  const el=document.getElementById('cs-list');
+  if(!el)return;
   const cs=[{n:'ボトックス 100U',g:8,s:4,sh:2},{n:'ヒアルロン酸',g:6,s:3,sh:3},{n:'プラセンタ注射',g:12,s:8,sh:5},{n:'注射針 30G',g:3,s:5,sh:4},{n:'ビタミンC',g:10,s:6,sh:4}];
-  document.getElementById('cs-list').innerHTML=
+  el.innerHTML=
     '<div class="csh"><span>製品名</span><span>銀座</span><span>渋谷</span><span>新宿</span></div>'+
     cs.map(r=>`<div class="csr"><div class="csname">${r.n}</div><div class="csv ${r.g<=3?'lo':''}">${r.g}</div><div class="csv ${r.s<=3?'lo':''}">${r.s}</div><div class="csv ${r.sh<=3?'lo':''}">${r.sh}</div></div>`).join('');
 }
 
 function renderT3(){
+  const el=document.getElementById('t3-list');
+  if(!el)return;
   const t3=[
     {c:'銀座本院',items:[{n:'ボトックス 100U',v:52},{n:'ヒアルロン酸',v:38},{n:'ビタミンC点滴',v:28}]},
     {c:'渋谷分院',items:[{n:'プラセンタ注射',v:31},{n:'ボトックス 100U',v:22},{n:'グルタチオン',v:18}]},
     {c:'新宿分院',items:[{n:'ヒアルロン酸',v:29},{n:'プラセンタ注射',v:23},{n:'ビタミンC点滴',v:20}]},
   ];
-  document.getElementById('t3-list').innerHTML=t3.map(c=>`
+  el.innerHTML=t3.map(c=>`
     <div class="t3blk"><div class="t3lbl">🏥 ${c.c}</div>
     ${c.items.map((it,i)=>`<div class="t3row"><div class="t3rank ${i===0?'g':''}">${i+1}</div><div class="t3name">${it.n}</div><div class="t3cnt">${it.v}回</div></div>`).join('')}
     </div>`).join('');
