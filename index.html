@@ -2798,7 +2798,7 @@ function submitNewOrder(){
   var timeStr = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0')
               + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
 
-  orderData.pending.push({
+  ordersData.pending.push({
     id: Date.now(),
     name: name,
     clinic: clinic,
