@@ -27,6 +27,9 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
 .header-right{display:flex;align-items:center;gap:10px}
 .clinic-badge{background:var(--orangeL);color:var(--orange);border:1.5px solid var(--orangeB);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700}
 .clinic-select{background:var(--orangeL);color:var(--orange);border:2px solid var(--orangeB);border-radius:20px;padding:8px 16px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none}
+.clinic-btns{display:flex;gap:6px}
+.clinic-btn{background:white;color:var(--ink2);border:2px solid var(--bdr);border-radius:20px;padding:8px 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap}
+.clinic-btn.active{background:var(--orangeL);color:var(--orange);border-color:var(--orange)}
 .sync-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-weight:700}
 .sync-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -136,11 +139,11 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
       <div class="sync-dot"></div>
       <span id="sync-status">同期中</span>
     </div>
-    <select class="clinic-select" id="clinic-select" onchange="changeClinic(this.value)">
-      <option value="銀座本院">🏥 銀座本院</option>
-      <option value="渋谷分院">🏥 渋谷分院</option>
-      <option value="新宿分院">🏥 新宿分院</option>
-    </select>
+    <div class="clinic-btns">
+      <button class="clinic-btn active" id="cbtn-銀座本院" onclick="changeClinic('銀座本院')">銀座</button>
+      <button class="clinic-btn" id="cbtn-渋谷分院" onclick="changeClinic('渋谷分院')">渋谷</button>
+      <button class="clinic-btn" id="cbtn-新宿分院" onclick="changeClinic('新宿分院')">新宿</button>
+    </div>
   </div>
 </div>
 
@@ -249,7 +252,13 @@ function changeClinic(clinic) {
   CLINIC = clinic;
   selectedItem = null;
   document.getElementById('qty-panel').classList.remove('show');
+  // ボタンのactive状態を更新
+  ['銀座本院','渋谷分院','新宿分院'].forEach(function(c){
+    var btn = document.getElementById('cbtn-' + c);
+    if(btn) btn.classList.toggle('active', c === clinic);
+  });
   renderProducts();
+  renderCheckList();
   toast('🏥', clinic + ' に切り替えました');
 }
 
