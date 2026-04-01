@@ -26,6 +26,7 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
 .header-logo-sub{font-size:11px;color:var(--ink3);margin-top:1px}
 .header-right{display:flex;align-items:center;gap:10px}
 .clinic-badge{background:var(--orangeL);color:var(--orange);border:1.5px solid var(--orangeB);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:700}
+.clinic-select{background:var(--orangeL);color:var(--orange);border:2px solid var(--orangeB);border-radius:20px;padding:8px 16px;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none}
 .sync-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-weight:700}
 .sync-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -135,7 +136,11 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
       <div class="sync-dot"></div>
       <span id="sync-status">同期中</span>
     </div>
-    <div class="clinic-badge" id="clinic-name">銀座本院</div>
+    <select class="clinic-select" id="clinic-select" onchange="changeClinic(this.value)">
+      <option value="銀座本院">🏥 銀座本院</option>
+      <option value="渋谷分院">🏥 渋谷分院</option>
+      <option value="新宿分院">🏥 新宿分院</option>
+    </select>
   </div>
 </div>
 
@@ -235,7 +240,18 @@ let inventory = [];
 let selectedItem = null;
 let currentMode = 'out';
 let currentQty = 1;
-const CLINIC = '銀座本院';
+let CLINIC = '銀座本院';
+
+// ══════════════════════════════
+// クリニック切替
+// ══════════════════════════════
+function changeClinic(clinic) {
+  CLINIC = clinic;
+  selectedItem = null;
+  document.getElementById('qty-panel').classList.remove('show');
+  renderProducts();
+  toast('🏥', clinic + ' に切り替えました');
+}
 
 // ══════════════════════════════
 // 初期化
@@ -272,11 +288,12 @@ async function loadInventory() {
 // ══════════════════════════════
 function renderProducts() {
   var grid = document.getElementById('product-grid');
-  if(inventory.length === 0){
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94A3B8">在庫データがありません</div>';
+  var filtered = inventory.filter(function(i){ return i.clinic === CLINIC; });
+  if(filtered.length === 0){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#94A3B8">この院の在庫データがありません</div>';
     return;
   }
-  grid.innerHTML = inventory.map(function(item) {
+  grid.innerHTML = filtered.map(function(item) {
     var isLow = item.quantity <= item.min_quantity;
     var isWarn = !isLow && item.quantity <= item.min_quantity * 1.5;
     var statusClass = isLow ? 'ng' : isWarn ? 'warn' : 'ok';
@@ -418,7 +435,8 @@ async function loadHistory() {
 // ══════════════════════════════
 function renderCheckList() {
   var el = document.getElementById('check-list');
-  el.innerHTML = inventory.map(function(item) {
+  var filtered = inventory.filter(function(i){ return i.clinic === CLINIC; });
+  el.innerHTML = filtered.map(function(item) {
     var isLow = item.quantity <= item.min_quantity;
     var isWarn = !isLow && item.quantity <= item.min_quantity * 1.5;
     var color = isLow ? '#DC2626' : isWarn ? '#D97706' : '#16A34A';
