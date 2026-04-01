@@ -1365,9 +1365,9 @@ async function loadInventoryFromDB() {
     if(invPage && invPage.classList.contains('active')){
       renderInv('all');
     }
-    // ダッシュボードの数値も更新
-    renderAlerts();
-    renderPU();
+    // ダッシュボードの数値も安全に更新
+    try{ renderAlerts(); }catch(e){}
+    try{ renderPU(); }catch(e){}
   }
 }
 
@@ -1737,8 +1737,10 @@ function renderExpiry(){
 }
 
 function renderPU(){
+  const el=document.getElementById('pu-list');
+  if(!el)return;
   const pu=[{n:'ボトックス 100U',c:89},{n:'ヒアルロン酸各種',c:67},{n:'プラセンタ注射',c:54},{n:'ビタミンC点滴',c:48},{n:'グルタチオン',c:32}];
-  document.getElementById('pu-list').innerHTML=pu.map(p=>`
+  el.innerHTML=pu.map(p=>`
     <div class="prow">
       <div class="pname">${p.n}</div>
       <div class="pbar"><div class="pfill" style="width:${Math.round(p.c/89*100)}%"></div></div>
