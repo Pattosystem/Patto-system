@@ -1345,7 +1345,6 @@ async function loadInventoryFromDB() {
   const { data, error } = await db.from('inventory').select('*').order('id');
   if(error){ console.error('在庫読み込みエラー:', error); return; }
   if(data && data.length > 0){
-    // DBのデータをinvDataに反映
     invData.length = 0;
     data.forEach(function(row){
       invData.push({
@@ -1361,9 +1360,14 @@ async function loadInventoryFromDB() {
         price: row.unit_price || 0
       });
     });
-    renderInv('all');
+    // 在庫一覧ページが表示中なら更新
+    var invPage = document.getElementById('pg-inventory');
+    if(invPage && invPage.classList.contains('active')){
+      renderInv('all');
+    }
+    // ダッシュボードの数値も更新
     renderAlerts();
-    toast('🔄','在庫データを読み込みました（'+data.length+'件）');
+    renderPU();
   }
 }
 
@@ -1420,7 +1424,9 @@ db.channel('inventory-changes')
     function(payload){
       loadInventoryFromDB();
     })
-  .subscribe();
+  .subscribe(function(status){
+    console.log('Supabase realtime:', status);
+  });
 
 const CLINICS={1:'銀座本院',2:'渋谷分院',3:'新宿分院'};
 let nid=200;
