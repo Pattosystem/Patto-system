@@ -854,7 +854,10 @@ tr:hover td{background:#FAFCFF}
 
 <!-- 発注管理 -->
 <div id="pg-orders" class="page">
-  <div class="ph"><div><div class="ph-title">🛒 発注管理</div><div class="ph-sub">発注待ち・発注履歴を管理</div></div></div>
+  <div class="ph">
+    <div><div class="ph-title">🛒 発注管理</div><div class="ph-sub">発注待ち・発注履歴を管理</div></div>
+    <button class="btn-primary" onclick="openNewOrderModal()">＋ 新規発注を登録</button>
+  </div>
   <div class="card" style="margin-bottom:14px">
     <div class="ch"><div class="ch-title">🔴 発注待ち</div><span class="cbadge" id="orders-pending-cnt" style="background: var(--greenp); color: var(--green);">0件</span></div>
     <div class="tbl-wrap"><table><thead><tr><th>製品名</th><th>クリニック</th><th style="text-align:center">推奨発注数</th><th>サプライヤー</th><th>登録日時</th><th>操作</th></tr></thead><tbody id="orders-pending-body"><tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr></tbody></table></div>
@@ -1271,6 +1274,57 @@ tr:hover td{background:#FAFCFF}
     <div class="uo" onclick="setUser(&#39;鈴木 看護師&#39;,&#39;鈴&#39;)"><div class="uo-av">鈴</div><div><div class="uo-name">鈴木 看護師</div><div class="uo-role">看護師 · 渋谷分院</div></div></div>
     <div class="uo" onclick="setUser(&#39;佐藤 看護師&#39;,&#39;佐&#39;)"><div class="uo-av">佐</div><div><div class="uo-name">佐藤 看護師</div><div class="uo-role">看護師 · 新宿分院</div></div></div>
     <div class="mfoot"><button class="btn-mo-ghost" onclick="closeM(&#39;modal-user&#39;)">閉じる</button></div>
+  </div>
+</div>
+
+<!-- 新規発注登録モーダル -->
+<div class="ov" id="modal-new-order">
+  <div class="modal" style="width:480px">
+    <div class="modal-title">🛒 新規発注を登録</div>
+    <div class="fg">
+      <div class="fg-g full">
+        <label>製品名 *</label>
+        <select class="finp" id="order-product-sel" onchange="onOrderProductChange()">
+          <option value="">── 在庫から選択 ──</option>
+        </select>
+      </div>
+      <div class="fg-g full">
+        <label>または製品名を直接入力</label>
+        <input class="finp" id="order-product-name" type="text" placeholder="例: ボトックス 100U（アラガン）">
+      </div>
+      <div class="fg-g">
+        <label>クリニック *</label>
+        <select class="finp" id="order-clinic">
+          <option value="銀座本院">銀座本院</option>
+          <option value="渋谷分院">渋谷分院</option>
+          <option value="新宿分院">新宿分院</option>
+        </select>
+      </div>
+      <div class="fg-g">
+        <label>発注数量 *</label>
+        <input class="finp" id="order-qty" type="number" min="1" placeholder="例: 10">
+      </div>
+      <div class="fg-g">
+        <label>単位</label>
+        <input class="finp" id="order-unit" type="text" placeholder="例: 本・箱・A">
+      </div>
+      <div class="fg-g">
+        <label>サプライヤー</label>
+        <input class="finp" id="order-supplier" type="text" placeholder="例: アラガン・ジャパン">
+      </div>
+      <div class="fg-g">
+        <label>希望納期</label>
+        <input class="finp" id="order-delivery" type="date">
+      </div>
+      <div class="fg-g full">
+        <label>メモ</label>
+        <input class="finp" id="order-memo" type="text" placeholder="例: 緊急・ロット指定など">
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM('modal-new-order')">キャンセル</button>
+      <button class="btn-mo-primary" onclick="submitNewOrder()">発注待ちに追加</button>
+    </div>
   </div>
 </div>
 
@@ -2696,6 +2750,76 @@ function saveCampaign() {
 }
 
 // ページ遷移はgo()に統合済み
+
+// ══════════════════════════════
+// 新規発注登録
+// ══════════════════════════════
+function openNewOrderModal(){
+  // 在庫データからセレクトボックスを生成
+  var sel = document.getElementById('order-product-sel');
+  if(sel){
+    sel.innerHTML = '<option value="">── 在庫から選択 ──</option>'
+      + invData.map(function(i){
+          return '<option value="' + i.name + '" data-clinic="' + i.clinic + '">' + i.name + '（' + i.clinic + '）</option>';
+        }).join('');
+  }
+  openM('modal-new-order');
+}
+
+function onOrderProductChange(){
+  var sel = document.getElementById('order-product-sel');
+  var opt = sel.options[sel.selectedIndex];
+  if(opt && opt.value){
+    document.getElementById('order-product-name').value = opt.value;
+    var clinic = opt.getAttribute('data-clinic');
+    if(clinic){
+      var clinicSel = document.getElementById('order-clinic');
+      for(var i=0;i<clinicSel.options.length;i++){
+        if(clinicSel.options[i].value === clinic){ clinicSel.selectedIndex = i; break; }
+      }
+    }
+  }
+}
+
+function submitNewOrder(){
+  var name = document.getElementById('order-product-name').value.trim()
+           || document.getElementById('order-product-sel').value;
+  var clinic = document.getElementById('order-clinic').value;
+  var qty = document.getElementById('order-qty').value.trim();
+  var unit = document.getElementById('order-unit').value.trim() || '個';
+  var supplier = document.getElementById('order-supplier').value.trim();
+  var delivery = document.getElementById('order-delivery').value;
+  var memo = document.getElementById('order-memo').value.trim();
+
+  if(!name){ toast('⚠️','製品名を入力してください'); return; }
+  if(!qty){ toast('⚠️','発注数量を入力してください'); return; }
+
+  var now = new Date();
+  var timeStr = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0')
+              + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  orderData.pending.push({
+    id: Date.now(),
+    name: name,
+    clinic: clinic,
+    qty: qty + unit,
+    supplier: supplier || '未設定',
+    delivery: delivery,
+    memo: memo,
+    time: timeStr
+  });
+
+  renderOrders();
+  closeM('modal-new-order');
+
+  // フォームリセット
+  ['order-product-name','order-qty','order-unit','order-supplier','order-delivery','order-memo'].forEach(function(id){
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('order-product-sel').selectedIndex = 0;
+
+  toast('🛒', '「' + name + '」を発注待ちに追加しました');
+}
 </script>
 
 
