@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>PattoStock - 倉庫端末</title>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -569,6 +569,18 @@ function toast(icon, msg) {
 }
 
 init();
+
+// ダブルタップによる拡大を完全防止
+var lastTouchEnd = 0;
+document.addEventListener('touchend', function(e){
+  var now = Date.now();
+  if(now - lastTouchEnd <= 300){ e.preventDefault(); }
+  lastTouchEnd = now;
+}, {passive: false});
+
+document.addEventListener('touchstart', function(e){
+  if(e.touches.length > 1){ e.preventDefault(); }
+}, {passive: false});
 </script>
 </body>
 </html>
