@@ -1394,28 +1394,25 @@ async function saveQtyToDB(itemId, newQty, actionType, staffName, memo) {
   return true;
 }
 
-// 初期データをSupabaseに登録（初回のみ）
+// 初期データをSupabaseに登録（初回のみ）・毎回DBから読み込む
 async function initDBData() {
   const { data } = await db.from('inventory').select('id').limit(1);
-  if(data && data.length > 0){ return; } // すでにデータあり
-
-  const rows = invData.map(function(item){
-    return {
-      name: item.name,
-      category: item.cat,
-      clinic: item.clinic,
-      quantity: item.qty,
-      min_quantity: item.min,
-      max_quantity: item.max || item.min * 4,
-      expiry_date: item.expiry,
-      lot_number: item.lot || '',
-      unit_price: item.price || 0
-    };
-  });
-  const { error } = await db.from('inventory').insert(rows);
-  if(error){ console.error('初期データ登録エラー:', error); return; }
-  toast('✅','初期在庫データをクラウドに登録しました');
-  loadInventoryFromDB();
+  if(!data || data.length === 0) {
+    // 初回のみサンプルデータを登録
+    const rows = invData.map(function(item){
+      return {
+        name: item.name, category: item.cat, clinic: item.clinic,
+        quantity: item.qty, min_quantity: item.min,
+        max_quantity: item.max || item.min * 4,
+        expiry_date: item.expiry, lot_number: item.lot || '',
+        unit_price: item.price || 0
+      };
+    });
+    await db.from('inventory').insert(rows);
+    toast('✅','初期在庫データをクラウドに登録しました');
+  }
+  // 常にDBからデータを読み込む
+  await loadInventoryFromDB();
 }
 
 // リアルタイム同期（他端末の変更を即反映）
