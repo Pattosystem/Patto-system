@@ -543,8 +543,9 @@ function renderCorpTab() {
         var items = allInventory.filter(function(i){ return i.clinic === store; });
         var currentCorpId = storeCorpMap[store] || '';
         var currentCorp = allCorps.find(function(c){ return c.id === currentCorpId; });
+        var safeStore = store.replace(/'/g, "\\'");
         return '<tr>'
-          + '<td style="font-weight:700">' + store + '</td>'
+          + '<td><div style="display:flex;align-items:center;gap:6px"><input id="storename-' + store + '" value="' + store + '" style="border:1.5px solid var(--bdr);border-radius:8px;padding:5px 9px;font-size:12px;font-family:inherit;outline:none;width:150px" /><button class="edit-btn" onclick="renameStore(\'' + safeStore + '\')" style="white-space:nowrap">名前変更</button></div></td>'
           + '<td>' + items.length + '品目</td>'
           + '<td>'
           + '<select class="form-select" id="mapping-' + store + '" style="width:200px;padding:6px 10px;font-size:12px">'
@@ -555,6 +556,27 @@ function renderCorpTab() {
           + '</tr>';
       }).join('')
     + '</tbody></table>';
+}
+
+
+// 店舗名変更
+async function renameStore(oldName) {
+  var input = document.getElementById('storename-' + oldName);
+  if(!input) return;
+  var newName = input.value.trim();
+  if(!newName){ toast('⚠️','店舗名を入力してください'); return; }
+  if(newName === oldName){ toast('ℹ️','店舗名が変わっていません'); return; }
+  if(!confirm('「' + oldName + '」→「' + newName + '」に変更します。よろしいですか？')) return;
+
+  // inventoryテーブルのclinic列を更新
+  var { error: e1 } = await db.from('inventory').update({clinic: newName}).eq('clinic', oldName);
+  // stock_historyテーブルのclinic列を更新
+  var { error: e2 } = await db.from('stock_history').update({clinic: newName}).eq('clinic', oldName);
+
+  if(e1 || e2){ toast('❌','変更に失敗しました'); return; }
+  toast('✅', '「' + oldName + '」→「' + newName + '」に変更しました');
+  await loadAll();
+  renderCorpTab();
 }
 
 // 法人モーダル
