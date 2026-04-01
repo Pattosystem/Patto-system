@@ -139,10 +139,8 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
       <div class="sync-dot"></div>
       <span id="sync-status">同期中</span>
     </div>
-    <div class="clinic-btns">
-      <button class="clinic-btn active" id="cbtn-銀座本院" onclick="changeClinic('銀座本院')">銀座</button>
-      <button class="clinic-btn" id="cbtn-渋谷分院" onclick="changeClinic('渋谷分院')">渋谷</button>
-      <button class="clinic-btn" id="cbtn-新宿分院" onclick="changeClinic('新宿分院')">新宿</button>
+    <div class="clinic-btns" id="clinic-btn-container">
+      <button class="clinic-btn active" id="cbtn-銀座本院" onclick="changeClinic('銀座本院')">銀座本院</button>
     </div>
   </div>
 </div>
@@ -256,9 +254,8 @@ function changeClinic(clinic) {
   selectedItem = null;
   document.getElementById('qty-panel').classList.remove('show');
   // ボタンのactive状態を更新
-  ['銀座本院','渋谷分院','新宿分院'].forEach(function(c){
-    var btn = document.getElementById('cbtn-' + c);
-    if(btn) btn.classList.toggle('active', c === clinic);
+  document.querySelectorAll('.clinic-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.id === 'cbtn-' + clinic);
   });
   renderProducts();
   renderCheckList();
@@ -290,11 +287,19 @@ async function loadInventory() {
   const { data, error } = await db.from('inventory').select('*').order('name');
   if(error){ toast('⚠️','データ読み込みエラー'); return; }
   inventory = data || [];
-  // 現在選択中のクリニックボタンをactive状態に反映
-  ['銀座本院','渋谷分院','新宿分院'].forEach(function(c){
-    var btn = document.getElementById('cbtn-' + c);
-    if(btn) btn.classList.toggle('active', c === CLINIC);
-  });
+
+  // クリニック一覧をDBから動的に生成
+  var clinics = [...new Set(inventory.map(function(i){ return i.clinic; }))].filter(Boolean);
+  var btnContainer = document.getElementById('clinic-btn-container');
+  if(btnContainer && clinics.length > 0){
+    // CLINICが存在しない院になっていたら最初の院に変更
+    if(!clinics.includes(CLINIC)) CLINIC = clinics[0];
+    btnContainer.innerHTML = clinics.map(function(c){
+      var short = c.replace('本院','本院').replace('分院','').replace('銀座','銀座').replace('渋谷','渋谷').replace('新宿','新宿');
+      return '<button class="clinic-btn' + (c === CLINIC ? ' active' : '') + '" id="cbtn-' + c + '" onclick="changeClinic(\'' + c + '\')">' + short + '</button>';
+    }).join('');
+  }
+
   renderProducts();
   renderCheckList();
 }
