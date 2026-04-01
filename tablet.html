@@ -131,7 +131,7 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
     </div>
     <div>
       <div class="header-logo-name">PattoStock</div>
-      <div class="header-logo-sub">倉庫端末</div>
+      <div class="header-logo-sub" id="header-clinic-name">倉庫端末</div>
     </div>
   </div>
   <div class="header-right">
@@ -139,10 +139,18 @@ body{font-family:'M PLUS Rounded 1c',sans-serif;background:var(--surf);color:var
       <div class="sync-dot"></div>
       <span id="sync-status">同期中</span>
     </div>
-    <div class="clinic-btns" id="clinic-btn-container">
-      <button class="clinic-btn active" id="cbtn-銀座本院" onclick="changeClinic('銀座本院')">銀座本院</button>
-    </div>
+    <button class="clinic-btn" onclick="openClinicSetup()" style="background:var(--orangeL);color:var(--orange);border-color:var(--orange)">🏥 院を変更</button>
   </div>
+</div>
+
+<!-- 院選択セットアップ画面 -->
+<div id="setup-screen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px">
+  <div style="width:64px;height:64px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+    <svg width="36" height="36" viewBox="0 0 44 44"><text x="22" y="34" text-anchor="middle" font-size="36" font-weight="800" fill="white" font-family="sans-serif">P</text></svg>
+  </div>
+  <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:var(--orange);margin-bottom:8px">PattoStock</div>
+  <div style="font-size:15px;color:var(--ink3);margin-bottom:40px">この端末で使用するクリニックを選択してください</div>
+  <div id="setup-clinic-list" style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px"></div>
 </div>
 
 <!-- メイン -->
@@ -244,7 +252,8 @@ let inventory = [];
 let selectedItem = null;
 let currentMode = 'out';
 let currentQty = 1;
-let CLINIC = '銀座本院';
+// 前回選択した院をlocalStorageから復元
+let CLINIC = localStorage.getItem('pattostock_clinic') || '';
 
 // ══════════════════════════════
 // クリニック切替
@@ -266,6 +275,10 @@ function changeClinic(clinic) {
 // 初期化
 // ══════════════════════════════
 async function init() {
+  // 保存済みの院名をヘッダーに表示
+  if(CLINIC) {
+    document.getElementById('header-clinic-name').textContent = CLINIC;
+  }
   await loadInventory();
   loadHistory();
 
@@ -290,18 +303,43 @@ async function loadInventory() {
 
   // クリニック一覧をDBから動的に生成
   var clinics = [...new Set(inventory.map(function(i){ return i.clinic; }))].filter(Boolean);
-  var btnContainer = document.getElementById('clinic-btn-container');
-  if(btnContainer && clinics.length > 0){
-    // CLINICが存在しない院になっていたら最初の院に変更
-    if(!clinics.includes(CLINIC)) CLINIC = clinics[0];
-    btnContainer.innerHTML = clinics.map(function(c){
-      var short = c.replace('本院','本院').replace('分院','').replace('銀座','銀座').replace('渋谷','渋谷').replace('新宿','新宿');
-      return '<button class="clinic-btn' + (c === CLINIC ? ' active' : '') + '" id="cbtn-' + c + '" onclick="changeClinic(\'' + c + '\')">' + short + '</button>';
+
+  // セットアップ画面のボタンを更新
+  var setupList = document.getElementById('setup-clinic-list');
+  if(setupList){
+    setupList.innerHTML = clinics.map(function(c){
+      return '<button onclick="selectClinicAndStart(\'' + c + '\')" style="width:100%;padding:20px;border-radius:16px;border:2px solid var(--bdr);background:white;font-size:18px;font-weight:800;font-family:inherit;cursor:pointer;color:var(--ink);transition:all .15s;text-align:left;display:flex;align-items:center;gap:12px">'
+        + '<span style="font-size:24px">🏥</span>' + c + '</button>';
     }).join('');
   }
 
+  // CLINICが未設定なら初回セットアップ画面を表示
+  if(!CLINIC){
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+
+  // CLINICが存在しない院になっていたら最初の院に変更
+  if(!clinics.includes(CLINIC)) CLINIC = clinics[0];
+
   renderProducts();
   renderCheckList();
+}
+
+// 院を選択してスタート
+function selectClinicAndStart(clinic) {
+  CLINIC = clinic;
+  localStorage.setItem('pattostock_clinic', clinic);
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('header-clinic-name').textContent = clinic;
+  renderProducts();
+  renderCheckList();
+  toast('🏥', clinic + ' で開始します');
+}
+
+// 院変更ボタン
+function openClinicSetup() {
+  document.getElementById('setup-screen').style.display = 'flex';
 }
 
 // ══════════════════════════════
