@@ -2136,7 +2136,7 @@ function openUserModal() {
     } else {
       ul.innerHTML = mData.staff.map(function(s) {
         var initial = s.name.charAt(0);
-        return '<div class="uo" onclick="setUser('' + s.name.replace(/'/g,"\'") + '','' + initial + '')">'
+        return '<div class="uo" onclick="setUser(\'' + s.name + '\',\'' + initial + '\')">'
           + '<div class="uo-av">' + initial + '</div>'
           + '<div><div class="uo-name">' + s.name + '</div>'
           + '<div class="uo-role">' + s.role + '</div></div>'
