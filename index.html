@@ -1224,21 +1224,46 @@ tr:hover td{background:#FAFCFF}
 
 <!-- MODALS -->
 <div class="ov" id="modal-delivery">
-  <div class="modal" style="width:400px">
+  <div class="modal" style="width:440px">
     <div class="modal-title">📤 出庫（用途を選択）</div>
     <div style="font-size:12px;color:var(--ink3);background:var(--skyp);padding:8px 12px;border-radius:8px;margin-bottom:14px">製品：<strong id="dlv-name" style="color:var(--ink)"></strong> ／ <span id="dlv-clinic"></span></div>
     <div style="margin-bottom:14px">
-      <div class="dlv-opt active" onclick="selectPurpose(this,&#39;patient&#39;)"><div class="dlv-opt-icon">💉</div><div><div class="dlv-opt-name">患者使用</div><div class="dlv-opt-sub">施術・治療での使用</div></div><div class="dlv-check">✓</div></div>
-      <div class="dlv-opt" onclick="selectPurpose(this,&#39;discard&#39;)"><div class="dlv-opt-icon">🗑️</div><div><div class="dlv-opt-name">廃棄</div><div class="dlv-opt-sub">期限切れ・破損・品質不良など</div></div><div class="dlv-check">✓</div></div>
-      <div class="dlv-opt" onclick="selectPurpose(this,&#39;demo&#39;)"><div class="dlv-opt-icon">🧪</div><div><div class="dlv-opt-name">デモ</div><div class="dlv-opt-sub">デモ・トレーニング・サンプル提供</div></div><div class="dlv-check">✓</div></div>
+      <div class="dlv-opt active" onclick="selectPurpose(this,'patient')"><div class="dlv-opt-icon">💉</div><div><div class="dlv-opt-name">患者使用</div><div class="dlv-opt-sub">施術・治療での使用</div></div><div class="dlv-check">✓</div></div>
+      <div class="dlv-opt" onclick="selectPurpose(this,'discard')"><div class="dlv-opt-icon">🗑️</div><div><div class="dlv-opt-name">廃棄</div><div class="dlv-opt-sub">期限切れ・破損・品質不良など</div></div><div class="dlv-check">✓</div></div>
+      <div class="dlv-opt" onclick="selectPurpose(this,'demo')"><div class="dlv-opt-icon">🧪</div><div><div class="dlv-opt-name">デモ</div><div class="dlv-opt-sub">デモ・トレーニング・サンプル提供</div></div><div class="dlv-check">✓</div></div>
     </div>
+
+    <!-- 単位選択（units_per_outer > 1 の商品のみ表示） -->
+    <div id="dlv-unit-section" style="display:none;background:#FFF7F0;border:1.5px solid #FED7AA;border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:800;color:#EA580C;margin-bottom:8px">📦 出庫単位を選択</div>
+      <div style="display:flex;gap:8px">
+        <button id="dlv-unit-outer" onclick="selectDlvUnit('outer')"
+          style="flex:1;padding:10px;border-radius:9px;border:2px solid #EA580C;background:#EA580C;color:white;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer">
+          <div id="dlv-unit-outer-label">箱単位</div>
+          <div style="font-size:10px;margin-top:2px;opacity:.8" id="dlv-unit-outer-sub">1箱 = 5個</div>
+        </button>
+        <button id="dlv-unit-inner" onclick="selectDlvUnit('inner')"
+          style="flex:1;padding:10px;border-radius:9px;border:2px solid #D8E6F5;background:white;color:var(--ink);font-size:13px;font-weight:800;font-family:inherit;cursor:pointer">
+          <div id="dlv-unit-inner-label">バラ単位</div>
+          <div style="font-size:10px;margin-top:2px;color:var(--ink3)" id="dlv-unit-inner-sub">個単位で出庫</div>
+        </button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#EA580C;font-weight:600" id="dlv-stock-info"></div>
+    </div>
+
     <div class="fg" style="margin-bottom:0">
-      <div class="fg-g"><label>数量 *</label><input type="number" id="dlv-qty" min="1" value="1"></div>
+      <div class="fg-g">
+        <label>数量 * <span id="dlv-unit-label" style="color:var(--ink3)"></span></label>
+        <input type="number" id="dlv-qty" min="1" value="1" oninput="updateDlvPreview()">
+      </div>
       <div class="fg-g"><label>担当者</label><input type="text" id="dlv-staff" placeholder="例: 田中 医師"></div>
+      <div class="fg-g full">
+        <div style="font-size:11px;font-weight:700;color:#16A34A;background:#F0FDF4;border-radius:8px;padding:6px 10px;margin-bottom:6px" id="dlv-total-preview" style="display:none"></div>
+      </div>
       <div class="fg-g full"><label>メモ（任意）</label><input type="text" id="dlv-memo" placeholder="例: 額ボトックス 20U"></div>
     </div>
     <div class="mfoot">
-      <button class="btn-mo-ghost" onclick="closeM(&#39;modal-delivery&#39;)">キャンセル</button>
+      <button class="btn-mo-ghost" onclick="closeM('modal-delivery')">キャンセル</button>
       <button class="btn-mo-primary" onclick="submitDelivery()">出庫を記録する</button>
     </div>
   </div>
@@ -2076,30 +2101,123 @@ function statusPreview(){
   p.textContent=n;p.style.background=lighten(c);p.style.color=c;
 }
 
-let dlvPurpose='patient';
-function openDelivery(idx){
-  const item=invData[idx];if(!item){toast('⚠️','エラーが発生しました');return}
-  document.getElementById('dlv-name').textContent=item.name;
-  document.getElementById('dlv-clinic').textContent=item.clinic;
-  document.getElementById('dlv-qty').value=1;
-  document.getElementById('dlv-memo').value='';
-  document.getElementById('dlv-staff').value=document.getElementById('uname').textContent;
-  dlvPurpose='patient';
-  document.querySelectorAll('.dlv-opt').forEach(o=>o.classList.remove('active'));
+let dlvPurpose = 'patient';
+let dlvUnit = 'inner'; // 'outer'=箱単位 / 'inner'=バラ単位
+let dlvCurrentItem = null;
+
+function openDelivery(idx) {
+  const item = invData[idx];
+  if(!item){ toast('⚠️','エラーが発生しました'); return; }
+  dlvCurrentItem = item;
+
+  document.getElementById('dlv-name').textContent = item.name;
+  document.getElementById('dlv-clinic').textContent = item.clinic;
+  document.getElementById('dlv-qty').value = 1;
+  document.getElementById('dlv-memo').value = '';
+  document.getElementById('dlv-staff').value = document.getElementById('uname').textContent;
+  dlvPurpose = 'patient';
+  document.querySelectorAll('.dlv-opt').forEach(o => o.classList.remove('active'));
   document.querySelectorAll('.dlv-opt')[0].classList.add('active');
+
+  // 単位設定がある商品かチェック
+  const hasUnit = item.units_per_outer && item.units_per_outer > 1;
+  const unitSection = document.getElementById('dlv-unit-section');
+  if(hasUnit) {
+    unitSection.style.display = 'block';
+    document.getElementById('dlv-unit-outer-label').textContent = item.outer_unit || '箱' + '単位';
+    document.getElementById('dlv-unit-outer-sub').textContent = '1' + (item.outer_unit||'箱') + ' = ' + item.units_per_outer + (item.inner_unit||'個');
+    document.getElementById('dlv-unit-inner-label').textContent = (item.inner_unit||'個') + '単位';
+    document.getElementById('dlv-unit-inner-sub').textContent = 'バラで出庫';
+
+    // 現在在庫を表示
+    const outerQ = item.outer_quantity || 0;
+    const innerQ = item.inner_quantity || 0;
+    document.getElementById('dlv-stock-info').textContent =
+      '現在庫：' + outerQ + (item.outer_unit||'箱') + ' ' + innerQ + (item.inner_unit||'個');
+
+    // デフォルトはバラ単位
+    selectDlvUnit('inner');
+  } else {
+    unitSection.style.display = 'none';
+    dlvUnit = 'inner';
+    document.getElementById('dlv-unit-label').textContent = '';
+    document.getElementById('dlv-total-preview').textContent = '';
+  }
+
   openM('modal-delivery');
 }
-function selectPurpose(el,purpose){
-  document.querySelectorAll('.dlv-opt').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');dlvPurpose=purpose;
+
+function selectDlvUnit(unit) {
+  dlvUnit = unit;
+  const item = dlvCurrentItem;
+  if(!item) return;
+
+  const outerBtn = document.getElementById('dlv-unit-outer');
+  const innerBtn = document.getElementById('dlv-unit-inner');
+
+  if(unit === 'outer') {
+    outerBtn.style.background = '#EA580C';
+    outerBtn.style.color = 'white';
+    outerBtn.style.borderColor = '#EA580C';
+    innerBtn.style.background = 'white';
+    innerBtn.style.color = 'var(--ink)';
+    innerBtn.style.borderColor = '#D8E6F5';
+    document.getElementById('dlv-unit-label').textContent = '（' + (item.outer_unit||'箱') + '）';
+  } else {
+    innerBtn.style.background = '#EA580C';
+    innerBtn.style.color = 'white';
+    innerBtn.style.borderColor = '#EA580C';
+    outerBtn.style.background = 'white';
+    outerBtn.style.color = 'var(--ink)';
+    outerBtn.style.borderColor = '#D8E6F5';
+    document.getElementById('dlv-unit-label').textContent = '（' + (item.inner_unit||'個') + '）';
+  }
+  updateDlvPreview();
 }
-function submitDelivery(){
-  const qty=parseInt(document.getElementById('dlv-qty').value)||0;
-  if(qty<=0){toast('⚠️','数量を入力してください');return}
-  const labels={patient:'患者使用',discard:'廃棄',demo:'デモ'};
-  const icons={patient:'💉',discard:'🗑️',demo:'🧪'};
+
+function updateDlvPreview() {
+  const item = dlvCurrentItem;
+  if(!item || !item.units_per_outer || item.units_per_outer <= 1) return;
+  const qty = parseInt(document.getElementById('dlv-qty').value) || 0;
+  const preview = document.getElementById('dlv-total-preview');
+  if(dlvUnit === 'outer') {
+    const totalInner = qty * item.units_per_outer;
+    preview.textContent = '→ ' + qty + (item.outer_unit||'箱') + ' = ' + totalInner + (item.inner_unit||'個') + ' を出庫';
+  } else {
+    preview.textContent = '→ ' + qty + (item.inner_unit||'個') + ' を出庫';
+  }
+}
+
+function selectPurpose(el, purpose) {
+  document.querySelectorAll('.dlv-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  dlvPurpose = purpose;
+}
+
+function submitDelivery() {
+  const qty = parseInt(document.getElementById('dlv-qty').value) || 0;
+  if(qty <= 0){ toast('⚠️','数量を入力してください'); return; }
+
+  const item = dlvCurrentItem;
+  const labels = {patient:'患者使用', discard:'廃棄', demo:'デモ'};
+  const icons  = {patient:'💉', discard:'🗑️', demo:'🧪'};
+
+  // 実際に減らす個数を計算
+  let totalInner = qty;
+  let unitLabel = '';
+  if(item && item.units_per_outer && item.units_per_outer > 1) {
+    if(dlvUnit === 'outer') {
+      totalInner = qty * item.units_per_outer;
+      unitLabel = qty + (item.outer_unit||'箱') + '（' + totalInner + (item.inner_unit||'個') + '）';
+    } else {
+      unitLabel = qty + (item.inner_unit||'個');
+    }
+  } else {
+    unitLabel = qty + '個';
+  }
+
   closeM('modal-delivery');
-  toast(icons[dlvPurpose],'出庫：'+document.getElementById('dlv-name').textContent+' × '+qty+'（'+labels[dlvPurpose]+'）');
+  toast(icons[dlvPurpose], '出庫：' + document.getElementById('dlv-name').textContent + ' × ' + unitLabel + '（' + labels[dlvPurpose] + '）');
 }
 
 function openM(id){document.getElementById(id).classList.add('open')}
