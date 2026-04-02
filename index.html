@@ -1929,13 +1929,7 @@ function renderInv(filter){
       <td>${item.clinic}</td>
       <td style="text-align:center;color:${low?'var(--red)':'var(--ink)'}">
         ${(item.units_per_outer && item.units_per_outer > 1)
-          ? (function(){
-              var boxes = Math.floor(item.qty / item.units_per_outer);
-              var outerU = item.outer_unit || '箱';
-              var innerU = item.inner_unit || '個';
-              return '<div style="font-size:14px;font-weight:800;line-height:1.3;color:' + (low?'var(--red)':'var(--ink)') + '">' + boxes + outerU + '</div>'
-                   + '<div style="font-size:11px;font-weight:400;color:var(--ink3);line-height:1.4">(' + item.qty + innerU + ')</div>';
-            })()
+          ? '<div style="font-size:14px;font-weight:800;line-height:1.3;color:' + (low?'var(--red)':'var(--ink)') + '">' + (item.outer_quantity||0) + (item.outer_unit||'箱') + '</div><div style="font-size:11px;font-weight:400;color:var(--ink3);line-height:1.4">(' + item.qty + (item.inner_unit||'個') + ')</div>'
           : '<span style="font-size:15px;font-weight:800">' + qtyDisplay + '</span>'
         }
       </td>
@@ -2258,12 +2252,13 @@ function submitDelivery() {
     const idx = invData.indexOf(item);
     if(idx >= 0) {
       if(item.units_per_outer && item.units_per_outer > 1) {
-        // 合計バイアル数だけ減らす。箱数は変えない
         const totalAfter = Math.max(0, item.qty - totalInner);
         invData[idx].qty = totalAfter;
-        // outer_quantityは変えない（箱を崩さない）
-        invData[idx].outer_quantity = item.outer_quantity || 0;
-        invData[idx].inner_quantity = item.inner_quantity || 0;
+        // 箱単位で出庫した場合は箱数も減らす
+        if(dlvUnit === 'outer') {
+          invData[idx].outer_quantity = Math.max(0, (item.outer_quantity || 0) - qty);
+        }
+        // バラ単位の場合は箱数そのまま
       } else {
         invData[idx].qty = Math.max(0, item.qty - totalInner);
       }
@@ -2275,6 +2270,7 @@ function submitDelivery() {
       const memo = document.getElementById('dlv-memo').value;
       db.from('inventory').update({
         quantity: newQty,
+        outer_quantity: invData[idx].outer_quantity,
         updated_at: new Date().toISOString()
       }).eq('id', item.id).then(function(r){ if(r.error) console.error(r.error); });
 
