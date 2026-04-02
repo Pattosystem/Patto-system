@@ -1893,6 +1893,21 @@ function renderT3(){
     </div>`).join('');
 }
 
+// 在庫数を「2箱 3バイアル」形式で表示するヘルパー
+function fmtQty(item) {
+  if(item.units_per_outer && item.units_per_outer > 1) {
+    const outerQ = item.outer_quantity || 0;
+    const innerQ = item.inner_quantity || 0;
+    const outerU = item.outer_unit || '箱';
+    const innerU = item.inner_unit || '個';
+    if(outerQ > 0 && innerQ > 0) return outerQ + outerU + ' ' + innerQ + innerU;
+    if(outerQ > 0) return outerQ + outerU;
+    if(innerQ > 0) return innerQ + innerU;
+    return '0' + outerU;
+  }
+  return item.qty + '個';
+}
+
 function renderInv(filter){
   const clinic=document.getElementById('csel')?.value||'all';
   let data=filter==='low'?invData.filter(i=>i.qty<=i.min):filter==='all'?invData:invData.filter(i=>i.cat===filter);
@@ -1905,11 +1920,12 @@ function renderInv(filter){
     const d=new Date(item.expiry),days=Math.ceil((d-today)/86400000);
     const ec=days<30?'var(--red)':days<90?'var(--amber)':'var(--ink3)';
     const st=low?'<span class="chip ng">要補充</span>':warn?'<span class="chip warn">注意</span>':'<span class="chip ok">正常</span>';
+    const qtyDisplay = fmtQty(item);
     return `<tr>
       <td style="font-weight:700">${item.name}</td>
       <td><span class="chip sky">${catLabel[item.cat]||item.cat}</span></td>
       <td>${item.clinic}</td>
-      <td style="text-align:center;font-size:15px;font-weight:800;color:${low?'var(--red)':'var(--ink)'}">${item.qty}</td>
+      <td style="text-align:center;font-size:13px;font-weight:800;color:${low?'var(--red)':'var(--ink)'}">${qtyDisplay}</td>
       <td style="text-align:center;color:var(--ink3)">${item.min}</td>
       <td style="color:${ec};font-weight:600">${d.getMonth()+1}月${d.getDate()}日</td>
       <td>${st}</td>
