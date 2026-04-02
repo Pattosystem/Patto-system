@@ -1939,11 +1939,23 @@ function renderInv(filter){
       <td><div style="display:flex;gap:5px">
         <button class="btn-primary" style="font-size:11px;padding:4px 9px;border-radius:7px" onclick="openDelivery(${invData.indexOf(item)})">出庫（用途）</button>
         <button style="background:var(--surf);color:var(--ink3);border:1.5px solid #D8E6F5;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="addOrder('${item.name.replace(/'/g,"\\'")}','${item.clinic}','${item.supplier||'—'}','要確認')">発注</button>
+        <button style="background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="deleteInventory(${item.id},'${item.name.replace(/'/g,"\\'")}')">削除</button>
       </div></td>
     </tr>`;
   }).join('');
   applyClinicColToTable();
 }
+async function deleteInventory(id, name) {
+  if(!confirm('「' + name + '」を削除しますか？\nこの操作は取り消せません。')) return;
+  _skipRealtimeUntil = Date.now() + 3000;
+  const { error } = await db.from('inventory').delete().eq('id', id);
+  if(error){ toast('❌', '削除に失敗しました'); console.error(error); return; }
+  const idx = invData.findIndex(function(i){ return i.id === id; });
+  if(idx >= 0) invData.splice(idx, 1);
+  renderInv('all');
+  toast('🗑️', '「' + name + '」を削除しました');
+}
+
 function filterInv(el,cat){
   document.querySelectorAll('#pg-inventory .fb').forEach(b=>b.classList.remove('active','danger'));
   el.classList.add('active');if(cat==='low')el.classList.add('danger');
