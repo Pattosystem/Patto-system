@@ -2255,8 +2255,9 @@ function submitDelivery() {
         // 合計バイアル数だけ減らす。箱数は変えない
         const totalAfter = Math.max(0, item.qty - totalInner);
         invData[idx].qty = totalAfter;
+        // outer_quantityは変えない（箱を崩さない）
         invData[idx].outer_quantity = item.outer_quantity || 0;
-        invData[idx].inner_quantity = totalAfter - (item.outer_quantity || 0) * item.units_per_outer;
+        invData[idx].inner_quantity = item.inner_quantity || 0;
       } else {
         invData[idx].qty = Math.max(0, item.qty - totalInner);
       }
@@ -2268,8 +2269,6 @@ function submitDelivery() {
       const memo = document.getElementById('dlv-memo').value;
       db.from('inventory').update({
         quantity: newQty,
-        outer_quantity: invData[idx].outer_quantity,
-        inner_quantity: invData[idx].inner_quantity,
         updated_at: new Date().toISOString()
       }).eq('id', item.id).then(function(r){ if(r.error) console.error(r.error); });
 
