@@ -1538,9 +1538,11 @@ async function initDBData() {
 }
 
 // リアルタイム同期（他端末の変更を即反映）
+let _skipRealtimeUntil = 0;
 db.channel('inventory-changes')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' },
     function(payload){
+      if(Date.now() < _skipRealtimeUntil) return; // 出庫直後はスキップ
       loadInventoryFromDB();
     })
   .subscribe(function(status){
@@ -2259,7 +2261,8 @@ function submitDelivery() {
         invData[idx].qty = Math.max(0, item.qty - totalInner);
       }
 
-      // Supabaseに保存
+      // Supabaseに保存（リアルタイム同期を3秒スキップ）
+      _skipRealtimeUntil = Date.now() + 3000;
       const newQty = invData[idx].qty;
       const staffName = document.getElementById('dlv-staff').value || document.getElementById('uname').textContent;
       const memo = document.getElementById('dlv-memo').value;
