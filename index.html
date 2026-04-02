@@ -266,6 +266,7 @@ tr:hover td{background:#FAFCFF}
 <!-- ログイン画面 -->
 <div id="login-screen">
   <div class="login-box">
+    <!-- ロゴ -->
     <div class="login-logo">
       <div class="login-logo-icon">
         <svg width="28" height="28" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
@@ -277,14 +278,46 @@ tr:hover td{background:#FAFCFF}
     </div>
     <div class="login-title">PattoStock</div>
     <div class="login-sub">美容クリニック向け 在庫管理システム</div>
-    <div id="login-err" class="login-err">クリニックコードまたはパスワードが違います</div>
-    <label class="login-label">クリニックコード</label>
-    <input id="login-code" class="login-inp" type="text" placeholder="例: demo01" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
-    <label class="login-label">パスワード</label>
-    <input id="login-pass" class="login-inp" type="password" placeholder="パスワードを入力" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" id="login-btn" onclick="doLogin()">ログイン →</button>
-    <div style="font-size:11px;color:#3A6080;text-align:center;margin-top:16px">
-      ご不明な点はシステム担当者にお問い合わせください
+
+    <!-- タブ切り替え -->
+    <div style="display:flex;gap:0;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:22px">
+      <button id="tab-login" onclick="switchTab('login')" style="flex:1;padding:9px;border-radius:9px;border:none;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--sky);color:#fff;transition:all .15s">ログイン</button>
+      <button id="tab-reg" onclick="switchTab('register')" style="flex:1;padding:9px;border-radius:9px;border:none;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;background:transparent;color:#6EA8D4;transition:all .15s">新規登録 🆓</button>
+    </div>
+
+    <!-- エラー表示 -->
+    <div id="login-err" class="login-err"></div>
+
+    <!-- ログインフォーム -->
+    <div id="form-login">
+      <label class="login-label">クリニックコード</label>
+      <input id="login-code" class="login-inp" type="text" placeholder="例: ginza_clinic" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      <label class="login-label">パスワード</label>
+      <input id="login-pass" class="login-inp" type="password" placeholder="パスワードを入力" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" id="login-btn" onclick="doLogin()">ログイン →</button>
+      <div style="font-size:12px;color:#4A7090;text-align:center;margin-top:14px;cursor:pointer" onclick="switchTab('register')">
+        アカウントをお持ちでない方は <span style="color:var(--sky);font-weight:700">新規登録</span>
+      </div>
+    </div>
+
+    <!-- 新規登録フォーム -->
+    <div id="form-register" style="display:none">
+      <div style="background:rgba(91,164,229,.1);border:1px solid rgba(91,164,229,.3);border-radius:10px;padding:10px 13px;margin-bottom:16px;font-size:12px;color:#9BCCE8;line-height:1.6">
+        🎉 <strong>無料でお試しいただけます</strong><br>
+        登録後すぐに在庫管理を始められます
+      </div>
+      <label class="login-label">クリニック名 <span style="color:var(--red)">*</span></label>
+      <input id="reg-corp-name" class="login-inp" type="text" placeholder="例: 銀座美容クリニック" onkeydown="if(event.key==='Enter')doRegister()">
+      <label class="login-label">クリニックコード（ログインID） <span style="color:var(--red)">*</span></label>
+      <input id="reg-code" class="login-inp" type="text" placeholder="例: ginza_clinic（英数字・アンダーバーのみ）" oninput="this.value=this.value.replace(/[^a-zA-Z0-9_]/g,'')" onkeydown="if(event.key==='Enter')doRegister()">
+      <label class="login-label">パスワード <span style="color:var(--red)">*</span></label>
+      <input id="reg-pass" class="login-inp" type="password" placeholder="8文字以上推奨" onkeydown="if(event.key==='Enter')doRegister()">
+      <label class="login-label">パスワード（確認）</label>
+      <input id="reg-pass2" class="login-inp" type="password" placeholder="もう一度入力" onkeydown="if(event.key==='Enter')doRegister()">
+      <button class="login-btn" id="reg-btn" onclick="doRegister()" style="background:var(--green)">無料で登録してはじめる 🚀</button>
+      <div style="font-size:12px;color:#4A7090;text-align:center;margin-top:14px;cursor:pointer" onclick="switchTab('login')">
+        すでにアカウントをお持ちの方は <span style="color:var(--sky);font-weight:700">ログイン</span>
+      </div>
     </div>
   </div>
 </div>
@@ -984,12 +1017,75 @@ async function doLogin() {
   }
   currentCorpId = data[0].id;
   currentCorpName = data[0].name;
+  // セッションをlocalStorageに保存（リロード対策）
+  try { localStorage.setItem('ps_corp_id', currentCorpId); localStorage.setItem('ps_corp_name', currentCorpName); } catch(e){}
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
-  // ナビにクリニック名を表示
   const corpBadge = document.getElementById('corp-name-badge');
   if(corpBadge) corpBadge.textContent = currentCorpName;
-  // アプリ初期化
+  initApp();
+}
+
+function switchTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+  document.getElementById('form-register').style.display = isLogin ? 'none' : 'block';
+  document.getElementById('tab-login').style.background = isLogin ? 'var(--sky)' : 'transparent';
+  document.getElementById('tab-login').style.color = isLogin ? '#fff' : '#6EA8D4';
+  document.getElementById('tab-reg').style.background = isLogin ? 'transparent' : 'var(--sky)';
+  document.getElementById('tab-reg').style.color = isLogin ? '#6EA8D4' : '#fff';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+async function doRegister() {
+  const corpName = document.getElementById('reg-corp-name').value.trim();
+  const code = document.getElementById('reg-code').value.trim();
+  const pass = document.getElementById('reg-pass').value;
+  const pass2 = document.getElementById('reg-pass2').value;
+  const errEl = document.getElementById('login-err');
+  const btn = document.getElementById('reg-btn');
+
+  errEl.style.display = 'none';
+
+  // バリデーション
+  if(!corpName) { errEl.style.display='block'; errEl.textContent='クリニック名を入力してください'; return; }
+  if(!code || code.length < 3) { errEl.style.display='block'; errEl.textContent='クリニックコードは3文字以上で入力してください'; return; }
+  if(!pass || pass.length < 4) { errEl.style.display='block'; errEl.textContent='パスワードは4文字以上で入力してください'; return; }
+  if(pass !== pass2) { errEl.style.display='block'; errEl.textContent='パスワードが一致しません'; return; }
+
+  btn.textContent = '登録中...'; btn.disabled = true;
+
+  // クリニックコードの重複チェック
+  const { data: existing } = await db.from('corporations').select('id').eq('clinic_code', code).limit(1);
+  if(existing && existing.length > 0) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'このクリニックコードはすでに使用されています';
+    btn.textContent = '無料で登録してはじめる 🚀'; btn.disabled = false;
+    return;
+  }
+
+  // 新規登録
+  const { data, error } = await db.from('corporations')
+    .insert({ name: corpName, clinic_code: code, password_plain: pass })
+    .select();
+
+  btn.textContent = '無料で登録してはじめる 🚀'; btn.disabled = false;
+
+  if(error || !data || data.length === 0) {
+    errEl.style.display = 'block';
+    errEl.textContent = '登録に失敗しました。もう一度お試しください';
+    console.error(error);
+    return;
+  }
+
+  // 登録成功 → 自動ログイン
+  currentCorpId = data[0].id;
+  currentCorpName = data[0].name;
+  try { localStorage.setItem('ps_corp_id', currentCorpId); localStorage.setItem('ps_corp_name', currentCorpName); } catch(e){}
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  const corpBadge = document.getElementById('corp-name-badge');
+  if(corpBadge) corpBadge.textContent = currentCorpName;
   initApp();
 }
 
@@ -997,6 +1093,7 @@ function doLogout() {
   currentCorpId = null;
   currentCorpName = '';
   invData.length = 0;
+  try { localStorage.removeItem('ps_corp_id'); localStorage.removeItem('ps_corp_name'); } catch(e){}
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-code').value = '';
@@ -2014,6 +2111,23 @@ function toast(icon, msg){ const el=document.createElement('div'); el.className=
 // ══════════════════════════════
 // ログイン後の初期化
 // ══════════════════════════════
+// ページロード時にlocalStorageからセッション復元
+(function restoreSession() {
+  try {
+    const savedId = localStorage.getItem('ps_corp_id');
+    const savedName = localStorage.getItem('ps_corp_name');
+    if(savedId && savedName) {
+      currentCorpId = parseInt(savedId);
+      currentCorpName = savedName;
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main-app').style.display = 'block';
+      const corpBadge = document.getElementById('corp-name-badge');
+      if(corpBadge) corpBadge.textContent = currentCorpName;
+      initApp();
+    }
+  } catch(e) {}
+})();
+
 function initApp() {
   const now = new Date();
   const dateEl = document.getElementById('dash-date');
