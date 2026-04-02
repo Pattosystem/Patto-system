@@ -1900,10 +1900,10 @@ function fmtQty(item) {
     const innerQ = item.inner_quantity || 0;
     const outerU = item.outer_unit || '箱';
     const innerU = item.inner_unit || '個';
-    if(outerQ > 0 && innerQ > 0) return outerQ + outerU + ' ' + innerQ + innerU;
-    if(outerQ > 0) return outerQ + outerU;
-    if(innerQ > 0) return innerQ + innerU;
-    return '0' + outerU;
+    const total = outerQ * item.units_per_outer + innerQ;
+    let boxPart = outerQ + outerU;
+    if(innerQ > 0) boxPart += ' + ' + innerQ + innerU;
+    return total + innerU + ' / ' + boxPart;
   }
   return item.qty + '個';
 }
