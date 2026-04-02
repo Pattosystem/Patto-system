@@ -1948,6 +1948,9 @@ function renderInv(filter){
 async function deleteInventory(id, name) {
   if(!confirm('「' + name + '」を削除しますか？\nこの操作は取り消せません。')) return;
   _skipRealtimeUntil = Date.now() + 3000;
+  // 先に操作履歴を削除
+  await db.from('stock_history').delete().eq('inventory_id', id);
+  // 次に在庫を削除
   const { error } = await db.from('inventory').delete().eq('id', id);
   if(error){ toast('❌', '削除に失敗しました'); console.error(error); return; }
   const idx = invData.findIndex(function(i){ return i.id === id; });
