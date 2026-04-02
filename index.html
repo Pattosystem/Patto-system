@@ -2250,13 +2250,11 @@ function submitDelivery() {
     const idx = invData.indexOf(item);
     if(idx >= 0) {
       if(item.units_per_outer && item.units_per_outer > 1) {
-        // 合計バイアル数から引いて、箱数・バラ数を再計算
+        // 合計バイアル数だけ減らす。箱数は変えない
         const totalAfter = Math.max(0, item.qty - totalInner);
-        const newOuter = Math.floor(totalAfter / item.units_per_outer);
-        const newInner = totalAfter % item.units_per_outer;
-        invData[idx].outer_quantity = newOuter;
-        invData[idx].inner_quantity = newInner;
         invData[idx].qty = totalAfter;
+        invData[idx].outer_quantity = item.outer_quantity || 0;
+        invData[idx].inner_quantity = totalAfter - (item.outer_quantity || 0) * item.units_per_outer;
       } else {
         invData[idx].qty = Math.max(0, item.qty - totalInner);
       }
