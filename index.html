@@ -1948,9 +1948,19 @@ function renderInv(filter){
 async function deleteInventory(id, name) {
   if(!confirm('「' + name + '」を削除しますか？\nこの操作は取り消せません。')) return;
   _skipRealtimeUntil = Date.now() + 3000;
-  // 先に操作履歴を削除
+  // 削除前に操作履歴に記録
+  const item = invData.find(function(i){ return i.id === id; });
+  await db.from('stock_history').insert({
+    inventory_id: id,
+    product_name: name,
+    action_type: 'delete',
+    quantity: item ? item.qty : 0,
+    clinic: item ? item.clinic : '',
+    staff_name: document.getElementById('uname').textContent,
+    memo: '在庫削除'
+  });
+  // 操作履歴を削除してから在庫を削除
   await db.from('stock_history').delete().eq('inventory_id', id);
-  // 次に在庫を削除
   const { error } = await db.from('inventory').delete().eq('id', id);
   if(error){ toast('❌', '削除に失敗しました'); console.error(error); return; }
   const idx = invData.findIndex(function(i){ return i.id === id; });
@@ -2008,11 +2018,12 @@ async function renderHist(filter){
     var d = new Date(h.created_at);
     var timeStr = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
     var isOut = h.action_type === 'out';
-    var icon = isOut ? '📤' : '📥';
-    var bg = isOut ? 'var(--redp)' : 'var(--greenp)';
-    var amt = isOut ? '-' + h.quantity : '+' + h.quantity;
-    var amtColor = isOut ? 'var(--red)' : 'var(--green)';
-    var label = isOut ? '出庫' : '入庫';
+    var isDel = h.action_type === 'delete';
+    var icon = isDel ? '🗑️' : isOut ? '📤' : '📥';
+    var bg = isDel ? 'var(--amberp)' : isOut ? 'var(--redp)' : 'var(--greenp)';
+    var amt = isDel ? '削除' : isOut ? '-' + h.quantity : '+' + h.quantity;
+    var amtColor = isDel ? 'var(--amber)' : isOut ? 'var(--red)' : 'var(--green)';
+    var label = isDel ? '削除' : isOut ? '出庫' : '入庫';
     return '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1.5px solid var(--bdr)" onmouseover="this.style.background=\'var(--surf)\'" onmouseout="this.style.background=\'\'">'
       + '<div style="width:34px;height:34px;border-radius:9px;background:' + bg + ';display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">' + icon + '</div>'
       + '<div style="flex:1">'
