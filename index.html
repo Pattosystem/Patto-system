@@ -355,14 +355,9 @@ tr:hover td{background:#FAFCFF}
     <div class="nl" onclick="go('settings',this)">設定</div>
   </div>
   <div class="nav-r">
-    <select class="csel multi-only" id="csel" onchange="onClinic()">
-      <option value="all">🏥 全院統合</option>
-      <option value="1">銀座本院</option>
-      <option value="2">渋谷分院</option>
-      <option value="3">新宿分院</option>
-    </select>
+    <select class="csel multi-only" id="csel" onchange="onClinic()"></select>
     <div class="nsearch" id="nav-search" style="display:none"><span style="color:#557799;font-size:12px">🔍</span><input id="nav-search-input" placeholder="製品名・ロット番号..."></div>
-    <button class="btn-primary" onclick="openM('modal-add')">＋ 入荷登録</button>
+    <button class="btn-primary" onclick="openAddModal()">＋ 入荷登録</button>
     <span id="corp-name-badge" style="font-size:11px;font-weight:700;color:var(--skyd);background:var(--skyp);border:1.5px solid #A8D0F5;border-radius:20px;padding:4px 10px;"></span>
     <div class="nbell">🔔<div class="ndot"></div></div>
     <div class="uchip" onclick="openM('modal-user')">
@@ -473,7 +468,7 @@ tr:hover td{background:#FAFCFF}
 
 <!-- 在庫一覧 -->
 <div id="pg-inventory" class="page">
-  <div class="ph"><div><div class="ph-title">📦 在庫一覧</div><div class="ph-sub">全3院の在庫をリアルタイム管理</div></div><button class="btn-primary" onclick="openM('modal-add')">＋ 入荷登録</button></div>
+  <div class="ph"><div><div class="ph-title">📦 在庫一覧</div><div class="ph-sub">全3院の在庫をリアルタイム管理</div></div><button class="btn-primary" onclick="openAddModal()">＋ 入荷登録</button></div>
   <div class="card">
     <div class="fbar">
       <button class="fb active" onclick="filterInv(this,'all')">すべて</button>
@@ -880,7 +875,7 @@ tr:hover td{background:#FAFCFF}
     <div class="fg">
       <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: リジュランスキンブースター"></div>
       <div class="fg-g"><label>カテゴリ</label><select id="add-cat"><option value="injection">注射・点滴薬剤</option><option value="skincare">スキンケア製品</option><option value="device">医療機器・器具</option><option value="supply">消耗品</option></select></div>
-      <div class="fg-g"><label>クリニック</label><select id="add-clinic"><option>銀座本院</option><option>渋谷分院</option><option>新宿分院</option></select></div>
+      <input type="hidden" id="add-clinic" value="">
       <div class="fg-g full" style="background:var(--skyp);border-radius:10px;padding:12px;border:1.5px solid #A8D0F5">
         <div style="font-size:11px;font-weight:800;color:var(--skyd);margin-bottom:8px">📦 単位設定</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -929,7 +924,7 @@ tr:hover td{background:#FAFCFF}
     <div class="fg">
       <div class="fg-g full"><label>製品名 *</label><select class="finp" id="order-product-sel" onchange="onOrderProductChange()"><option value="">── 在庫から選択 ──</option></select></div>
       <div class="fg-g full"><label>または製品名を直接入力</label><input class="finp" id="order-product-name" type="text" placeholder="例: ボトックス 100U"></div>
-      <div class="fg-g"><label>クリニック *</label><select class="finp" id="order-clinic"><option value="銀座本院">銀座本院</option><option value="渋谷分院">渋谷分院</option><option value="新宿分院">新宿分院</option></select></div>
+      <div class="fg-g"><label>クリニック *</label><select class="finp" id="order-clinic"></select></div>
       <div class="fg-g"><label>発注数量 *</label><input class="finp" id="order-qty" type="number" min="1" placeholder="例: 10"></div>
       <div class="fg-g"><label>単位</label><input class="finp" id="order-unit" type="text" placeholder="例: 本・箱・A"></div>
       <div class="fg-g"><label>サプライヤー</label><input class="finp" id="order-supplier" type="text" placeholder="例: アラガン・ジャパン"></div>
@@ -1162,7 +1157,7 @@ async function loadInventoryFromDB() {
         id: row.id,
         name: row.name,
         cat: row.category || 'injection',
-        clinic: row.clinic || '銀座本院',
+        clinic: row.clinic || currentCorpName || '',
         qty: row.quantity || 0,
         min: row.min_quantity || 5,
         max: row.max_quantity || 50,
@@ -1182,6 +1177,8 @@ async function loadInventoryFromDB() {
     if(document.getElementById('pg-inventory').classList.contains('active')) {
       renderInv('all');
     }
+    // クリニック選択肢も再更新（非同期読み込み後の確実な反映）
+    updateClinicSelects();
     // クイック移送の製品リストを更新
     updateProductSelects();
   }
@@ -1221,6 +1218,36 @@ db.channel('inventory-changes')
 // ══════════════════════════════
 // ★修正: refreshKPI - IDで確実に更新
 // ══════════════════════════════
+// クリニック名セレクトを一括更新
+function updateClinicSelects() {
+  // 必ずmData.clinicから取得（initAppで設定済み）
+  const clinics = (mData.clinic && mData.clinic.length > 0)
+    ? mData.clinic.map(function(c){ return c.name; })
+    : (currentCorpName ? [currentCorpName] : []);
+
+  if(clinics.length === 0) return;
+
+  // 入荷登録モーダル
+  const addClinic = document.getElementById('add-clinic');
+  if(addClinic) addClinic.innerHTML = clinics.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('');
+
+  // 発注登録モーダル
+  const orderClinic = document.getElementById('order-clinic');
+  if(orderClinic) orderClinic.innerHTML = clinics.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('');
+
+  // ナビのクリニック絞り込み
+  const csel = document.getElementById('csel');
+  if(csel){
+    if(clinics.length > 1){
+      csel.innerHTML = '<option value="all">🏥 全院統合</option>'
+        + clinics.map(function(n,i){ return '<option value="'+(i+1)+'">'+n+'</option>'; }).join('');
+    } else {
+      csel.innerHTML = '<option value="all">🏥 '+clinics[0]+'</option>';
+    }
+  }
+  console.log('updateClinicSelects:', clinics);
+}
+
 function refreshKPI() {
   const today = new Date();
 
@@ -1853,9 +1880,9 @@ function mSave(type){
   if(type==='status') data={name,color:document.getElementById('f-status-color').value,cond:document.getElementById('f-status-cond').value,desc:document.getElementById('f-status-desc').value};
   if(eid){const i=mData[type].findIndex(function(x){return x.id===eid;});mData[type][i]=Object.assign({},mData[type][i],data);toast('✅','「'+name+'」を更新しました');}
   else{mData[type].push(Object.assign({id:++nid},data));toast('✅','「'+name+'」を追加しました');}
-  mReset(type);mRenderList(type);
+  mReset(type);mRenderList(type);if(type==='clinic')updateClinicSelects();
 }
-function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);toast('🗑️','「'+item.name+'」を削除しました'); }
+function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);if(type==='clinic')updateClinicSelects();toast('🗑️','「'+item.name+'」を削除しました'); }
 function mReset(type){
   document.getElementById('fid-'+type).value='';
   ['name','addr','tel','icon','desc','person','email','items'].forEach(function(f){const el=document.getElementById('f-'+type+'-'+f);if(el)el.value='';});
@@ -1963,7 +1990,7 @@ function impShowPreview(){
   function g(row,key){const idx=impMapping[key];return(idx!==null&&idx!==undefined&&row[idx]!==undefined)?String(row[idx]).trim():'';}
   function parseDate(v){if(!v||String(v).trim()==='')return '';const m=String(v).match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');return String(v).trim();}
   function guesscat(v){const s=String(v||'').toLowerCase();if(s.includes('注射')||s.includes('injection')||s.includes('点滴'))return 'injection';if(s.includes('スキンケア')||s.includes('skincare')||s.includes('化粧'))return 'skincare';if(s.includes('消耗')||s.includes('supply'))return 'supply';return 'injection';}
-  impParsed=impRawData.map(function(row,i){const name=g(row,'name');if(!name)return null;return{id:1000+i,name,qty:parseInt(g(row,'qty'))||0,clinic:g(row,'clinic')||'銀座本院',cat:guesscat(g(row,'cat')),expiry:parseDate(g(row,'expiry'))||'2027-12-31',min:parseInt(g(row,'min'))||3,price:parseInt(String(g(row,'price')).replace(/[,¥]/g,''))||0,lot:g(row,'lot')||''};}).filter(Boolean);
+  impParsed=impRawData.map(function(row,i){const name=g(row,'name');if(!name)return null;return{id:1000+i,name,qty:parseInt(g(row,'qty'))||0,clinic:g(row,'clinic')||currentCorpName||'',cat:guesscat(g(row,'cat')),expiry:parseDate(g(row,'expiry'))||'2027-12-31',min:parseInt(g(row,'min'))||3,price:parseInt(String(g(row,'price')).replace(/[,¥]/g,''))||0,lot:g(row,'lot')||''};}).filter(Boolean);
   if(!impParsed.length){toast('⚠️','有効なデータが見つかりません');return;}
   const cols=['製品名','クリニック','カテゴリ','在庫数','有効期限','最小在庫'];
   document.getElementById('imp-thead').innerHTML=cols.map(function(c){return '<th>'+c+'</th>';}).join('');
@@ -2092,6 +2119,12 @@ function go(name, el) {
 // ══════════════════════════════
 // ユーティリティ
 // ══════════════════════════════
+function openAddModal() {
+  // hidden inputにログインクリニック名をセット
+  var addCl = document.getElementById('add-clinic');
+  if(addCl) addCl.value = currentCorpName || '';
+  openM('modal-add');
+}
 function openM(id){ document.getElementById(id).classList.add('open'); }
 function closeM(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.ov').forEach(function(o){ o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); }); });
@@ -2135,6 +2168,9 @@ function initApp() {
   // 設定画面のクリニック情報を反映
   const corpNameInput = document.getElementById('setting-corp-name');
   if(corpNameInput) corpNameInput.value = currentCorpName;
+
+  // ★ クリニック選択肢をログインクリニック名で初期化
+  updateClinicSelects();
 
   setMode(currentMode);
   mRenderAll();
