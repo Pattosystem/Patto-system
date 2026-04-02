@@ -322,6 +322,17 @@ tr:hover td{background:#FAFCFF}
   </div>
 </div>
 
+<!-- 院選択画面（ログイン後・複数院の場合） -->
+<div id="clinic-select-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1500;align-items:center;justify-content:center;flex-direction:column;gap:20px">
+  <div style="background:var(--bg2);border-radius:20px;padding:40px 44px;width:420px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.4);border:1px solid var(--bg4)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">🏥 院を選択してください</div>
+      <div style="font-size:12px;color:#6EA8D4">本日作業する院を選んでください</div>
+    </div>
+    <div id="clinic-select-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+</div>
+
 <!-- メインアプリ（ログイン後に表示） -->
 <div id="main-app" style="display:none">
 
@@ -987,6 +998,7 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ══════════════════════════════
 let currentCorpId = null;
 let currentCorpName = '';
+let currentClinic = ''; // 選択中の院
 
 async function doLogin() {
   const code = document.getElementById('login-code').value.trim();
@@ -1012,6 +1024,56 @@ async function doLogin() {
   // セッションをlocalStorageに保存（リロード対策）
   try { localStorage.setItem('ps_corp_id', currentCorpId); localStorage.setItem('ps_corp_name', currentCorpName); } catch(e){}
   document.getElementById('login-screen').style.display = 'none';
+  showClinicSelectOrApp();
+}
+
+function showClinicSelectOrApp() {
+  // mData.clinicはinitAppで設定されるので、まずDBからクリニック数確認
+  // 簡易版: localStorageに保存済みのmData.clinicを使う
+  // ログイン直後はcorporationsテーブルから院数を確認
+  db.from('inventory').select('clinic').eq('corporation_id', currentCorpId)
+    .then(function(r) {
+      var clinics = [...new Set((r.data||[]).map(function(i){ return i.clinic; }).filter(Boolean))];
+      // マスター管理に登録されたクリニックも含める（inventoryがまだない場合）
+      if(clinics.length <= 1) {
+        // 1院または在庫なし → そのままアプリ起動
+        currentClinic = clinics[0] || currentCorpName;
+        launchApp();
+      } else {
+        // 複数院 → 選択画面表示
+        showClinicSelectScreen(clinics);
+      }
+    })
+    .catch(function() {
+      currentClinic = currentCorpName;
+      launchApp();
+    });
+}
+
+function showClinicSelectScreen(clinics) {
+  var screen = document.getElementById('clinic-select-screen');
+  var list = document.getElementById('clinic-select-list');
+  if(!screen || !list) { launchApp(); return; }
+  list.innerHTML = clinics.map(function(c) {
+    var safeC = c.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<div onclick="selectClinic(\'' + safeC + '\')" style="background:var(--bg3);border:1.5px solid var(--bg4);border-radius:14px;padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .15s">'
+      + '<div style="width:40px;height:40px;background:var(--sky);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🏥</div>'
+      + '<div><div style="font-size:15px;font-weight:700;color:#fff">' + c + '</div>'
+      + '<div style="font-size:11px;color:#6EA8D4;margin-top:2px">この院で作業を開始する</div></div>'
+      + '<div style="margin-left:auto;color:var(--sky);font-size:20px">›</div>'
+      + '</div>';
+  }).join('');
+  screen.style.display = 'flex';
+}
+
+function selectClinic(clinicName) {
+  currentClinic = clinicName;
+  try { localStorage.setItem('ps_clinic', clinicName); } catch(e) {}
+  document.getElementById('clinic-select-screen').style.display = 'none';
+  launchApp();
+}
+
+function launchApp() {
   document.getElementById('main-app').style.display = 'block';
   const corpBadge = document.getElementById('corp-name-badge');
   if(corpBadge) corpBadge.textContent = currentCorpName;
@@ -1075,17 +1137,15 @@ async function doRegister() {
   currentCorpName = data[0].name;
   try { localStorage.setItem('ps_corp_id', currentCorpId); localStorage.setItem('ps_corp_name', currentCorpName); } catch(e){}
   document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('main-app').style.display = 'block';
-  const corpBadge = document.getElementById('corp-name-badge');
-  if(corpBadge) corpBadge.textContent = currentCorpName;
-  initApp();
+  showClinicSelectOrApp();
 }
 
 function doLogout() {
   currentCorpId = null;
   currentCorpName = '';
   invData.length = 0;
-  try { localStorage.removeItem('ps_corp_id'); localStorage.removeItem('ps_corp_name'); } catch(e){}
+  try { localStorage.removeItem('ps_corp_id'); localStorage.removeItem('ps_corp_name'); localStorage.removeItem('ps_clinic'); } catch(e){}
+  currentClinic = '';
   document.getElementById('main-app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-code').value = '';
@@ -2117,9 +2177,9 @@ function go(name, el) {
 // ユーティリティ
 // ══════════════════════════════
 function openAddModal() {
-  // hidden inputにログインクリニック名をセット
+  // 選択中の院名をセット（複数院の場合はcurrentClinic、1院の場合はcurrentCorpName）
   var addCl = document.getElementById('add-clinic');
-  if(addCl) addCl.value = currentCorpName || '';
+  if(addCl) addCl.value = currentClinic || currentCorpName || '';
   openM('modal-add');
 }
 function openM(id){ document.getElementById(id).classList.add('open'); }
@@ -2164,10 +2224,10 @@ function toast(icon, msg){ const el=document.createElement('div'); el.className=
       currentCorpId = parseInt(savedId);
       currentCorpName = savedName;
       document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('main-app').style.display = 'block';
-      const corpBadge = document.getElementById('corp-name-badge');
-      if(corpBadge) corpBadge.textContent = currentCorpName;
-      initApp();
+      // 保存済みの院があれば復元
+      const savedClinic = localStorage.getItem('ps_clinic');
+      if(savedClinic) currentClinic = savedClinic;
+      showClinicSelectOrApp();
     }
   } catch(e) {}
 })();
