@@ -1245,21 +1245,57 @@ tr:hover td{background:#FAFCFF}
 </div>
 
 <div class="ov" id="modal-add">
-  <div class="modal">
+  <div class="modal" style="width:520px">
     <div class="modal-title">📦 入荷登録</div>
     <div class="fg">
-      <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: ボトックス 100U（アラガン）"></div>
+      <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: リジュランスキンブースター"></div>
       <div class="fg-g"><label>カテゴリ</label><select id="add-cat"><option value="injection">注射・点滴薬剤</option><option value="skincare">スキンケア製品</option><option value="device">医療機器・器具</option><option value="supply">消耗品</option></select></div>
       <div class="fg-g"><label>クリニック</label><select id="add-clinic"><option>銀座本院</option><option>渋谷分院</option><option>新宿分院</option></select></div>
-      <div class="fg-g"><label>数量 *</label><input id="add-qty" type="number" placeholder="10" min="0"></div>
+
+      <!-- 単位設定 -->
+      <div class="fg-g full" style="background:var(--skyp);border-radius:10px;padding:12px;border:1.5px solid #A8D0F5">
+        <div style="font-size:11px;font-weight:800;color:var(--skyd);margin-bottom:8px">📦 単位設定</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px">外箱の単位</label>
+            <input class="finp" id="add-outer-unit" type="text" placeholder="例: 箱" value="箱">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px">中身の単位</label>
+            <input class="finp" id="add-inner-unit" type="text" placeholder="例: バイアル" value="個">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px">1箱あたりの個数</label>
+            <input class="finp" id="add-units-per-outer" type="number" placeholder="例: 5" value="1" min="1" onchange="updateUnitPreview()">
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--skyd)" id="unit-preview">例: 1箱 = 1個</div>
+      </div>
+
+      <!-- 入荷数量 -->
+      <div class="fg-g full" style="background:#F0FDF4;border-radius:10px;padding:12px;border:1.5px solid #86EFAC">
+        <div style="font-size:11px;font-weight:800;color:#16A34A;margin-bottom:8px">📥 入荷数量</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px">外箱数 <span id="outer-unit-label">（箱）</span></label>
+            <input class="finp" id="add-outer-qty" type="number" placeholder="例: 2" min="0" value="0" onchange="updateTotalPreview()">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;color:var(--ink3);display:block;margin-bottom:3px">バラ数 <span id="inner-unit-label">（個）</span></label>
+            <input class="finp" id="add-inner-qty" type="number" placeholder="例: 3" min="0" value="0" onchange="updateTotalPreview()">
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;font-weight:700;color:#16A34A" id="total-preview">合計: 0個</div>
+      </div>
+
       <div class="fg-g"><label>単価（円）</label><input id="add-price" type="number" placeholder="12000" min="0"></div>
-      <div class="fg-g"><label>最小在庫数</label><input id="add-min" type="number" placeholder="3" min="0"></div>
+      <div class="fg-g"><label>最小在庫数（箱）</label><input id="add-min" type="number" placeholder="3" min="0"></div>
       <div class="fg-g"><label>有効期限</label><input id="add-expiry" type="date"></div>
       <div class="fg-g"><label>ロット番号</label><input id="add-lot" type="text" placeholder="BT2025-001"></div>
       <div class="fg-g full"><label>サプライヤー</label><input id="add-supplier" type="text" placeholder="アラガン・ジャパン"></div>
     </div>
     <div class="mfoot">
-      <button class="btn-mo-ghost" onclick="closeM(&#39;modal-add&#39;)">キャンセル</button>
+      <button class="btn-mo-ghost" onclick="closeM('modal-add')">キャンセル</button>
       <button class="btn-mo-primary" onclick="submitAdd()">登録する</button>
     </div>
   </div>
@@ -2070,44 +2106,98 @@ function openM(id){document.getElementById(id).classList.add('open')}
 function closeM(id){document.getElementById(id).classList.remove('open')}
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
 
+// 単位プレビュー更新
+function updateUnitPreview() {
+  var outerUnit = document.getElementById('add-outer-unit').value || '箱';
+  var innerUnit = document.getElementById('add-inner-unit').value || '個';
+  var perOuter  = parseInt(document.getElementById('add-units-per-outer').value) || 1;
+  document.getElementById('unit-preview').textContent = '例: 1' + outerUnit + ' = ' + perOuter + innerUnit;
+  document.getElementById('outer-unit-label').textContent = '（' + outerUnit + '）';
+  document.getElementById('inner-unit-label').textContent = '（' + innerUnit + '）';
+  updateTotalPreview();
+}
+
+function updateTotalPreview() {
+  var innerUnit  = document.getElementById('add-inner-unit').value || '個';
+  var perOuter   = parseInt(document.getElementById('add-units-per-outer').value) || 1;
+  var outerQty   = parseInt(document.getElementById('add-outer-qty').value) || 0;
+  var innerQty   = parseInt(document.getElementById('add-inner-qty').value) || 0;
+  var total = outerQty * perOuter + innerQty;
+  document.getElementById('total-preview').textContent = '合計: ' + total + innerUnit + '（' + outerQty + '箱 × ' + perOuter + ' + バラ' + innerQty + '個）';
+}
+
 function submitAdd() {
   const name = document.getElementById('add-name').value.trim();
-  const qty  = parseInt(document.getElementById('add-qty').value) || 0;
   if (!name) { toast('⚠️', '製品名を入力してください'); return; }
 
+  const outerUnit    = document.getElementById('add-outer-unit').value.trim() || '箱';
+  const innerUnit    = document.getElementById('add-inner-unit').value.trim() || '個';
+  const unitsPerOuter = parseInt(document.getElementById('add-units-per-outer').value) || 1;
+  const outerQty     = parseInt(document.getElementById('add-outer-qty').value) || 0;
+  const innerQty     = parseInt(document.getElementById('add-inner-qty').value) || 0;
+  const totalQty     = outerQty * unitsPerOuter + innerQty;
+
+  if(outerQty === 0 && innerQty === 0) { toast('⚠️', '入荷数量を入力してください'); return; }
+
   const newItem = {
-    id:     ++nid,
+    id:             ++nid,
     name,
-    cat:      document.getElementById('add-cat').value,
-    clinic:   document.getElementById('add-clinic').value,
-    qty,
-    min:      parseInt(document.getElementById('add-min').value) || 3,
-    price:    parseInt(document.getElementById('add-price').value) || 0,
-    expiry:   document.getElementById('add-expiry').value || '2027-12-31',
-    lot:      document.getElementById('add-lot').value.trim(),
-    supplier: document.getElementById('add-supplier').value.trim(),
+    cat:            document.getElementById('add-cat').value,
+    clinic:         document.getElementById('add-clinic').value,
+    qty:            totalQty,
+    outer_unit:     outerUnit,
+    inner_unit:     innerUnit,
+    units_per_outer: unitsPerOuter,
+    outer_quantity: outerQty,
+    inner_quantity: innerQty,
+    min:            parseInt(document.getElementById('add-min').value) || 3,
+    price:          parseInt(document.getElementById('add-price').value) || 0,
+    expiry:         document.getElementById('add-expiry').value || '2027-12-31',
+    lot:            document.getElementById('add-lot').value.trim(),
+    supplier:       document.getElementById('add-supplier').value.trim(),
   };
 
   invData.unshift(newItem);
 
-  // localStorage に保存
+  // Supabaseに保存
+  db.from('inventory').insert({
+    name:             newItem.name,
+    category:         newItem.cat,
+    clinic:           newItem.clinic,
+    quantity:         totalQty,
+    outer_unit:       outerUnit,
+    inner_unit:       innerUnit,
+    units_per_outer:  unitsPerOuter,
+    outer_quantity:   outerQty,
+    inner_quantity:   innerQty,
+    min_quantity:     newItem.min,
+    unit_price:       newItem.price,
+    expiry_date:      newItem.expiry,
+    lot_number:       newItem.lot
+  }).then(function(r){ if(r.error) console.error(r.error); });
+
   try { localStorage.setItem('medistock_inv', JSON.stringify(invData)); } catch(e) {}
 
-  // 在庫一覧を開いていれば即再描画
   if (document.getElementById('pg-inventory').classList.contains('active')) {
     renderInv('all');
-    // フィルターをリセット
     document.querySelectorAll('#pg-inventory .fb').forEach(b => b.classList.remove('active', 'danger'));
     document.querySelector('#pg-inventory .fb').classList.add('active');
   }
 
-  // フォームをクリア
-  ['add-name','add-qty','add-price','add-min','add-expiry','add-lot','add-supplier']
-    .forEach(id => { document.getElementById(id).value = ''; });
+  // フォームクリア
+  ['add-name','add-price','add-min','add-expiry','add-lot','add-supplier'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('add-outer-qty').value = '0';
+  document.getElementById('add-inner-qty').value = '0';
+  document.getElementById('add-outer-unit').value = '箱';
+  document.getElementById('add-inner-unit').value = '個';
+  document.getElementById('add-units-per-outer').value = '1';
+  updateUnitPreview();
 
   closeM('modal-add');
   refreshKPI();
-  toast('✅', `「${name}」を入荷登録しました（在庫：${qty}）`);
+  toast('✅', `「${name}」を入荷登録しました（${outerQty}${outerUnit}＋バラ${innerQty}${innerUnit} = 合計${totalQty}${innerUnit}）`);
 }
 function setUser(name,initial){
   document.getElementById('uname').textContent=name;
