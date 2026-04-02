@@ -875,7 +875,7 @@ tr:hover td{background:#FAFCFF}
     <div class="fg">
       <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: リジュランスキンブースター"></div>
       <div class="fg-g"><label>カテゴリ</label><select id="add-cat"><option value="injection">注射・点滴薬剤</option><option value="skincare">スキンケア製品</option><option value="device">医療機器・器具</option><option value="supply">消耗品</option></select></div>
-      <div class="fg-g"><label>クリニック</label><select id="add-clinic"></select></div>
+      <input type="hidden" id="add-clinic" value="">
       <div class="fg-g full" style="background:var(--skyp);border-radius:10px;padding:12px;border:1.5px solid #A8D0F5">
         <div style="font-size:11px;font-weight:800;color:var(--skyd);margin-bottom:8px">📦 単位設定</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -2120,12 +2120,9 @@ function go(name, el) {
 // ユーティリティ
 // ══════════════════════════════
 function openAddModal() {
-  // クリニック選択肢を毎回確実にリセット
-  var clinics = (mData.clinic && mData.clinic.length > 0)
-    ? mData.clinic.map(function(c){ return c.name; })
-    : [currentCorpName];
+  // hidden inputにログインクリニック名をセット
   var addCl = document.getElementById('add-clinic');
-  if(addCl) addCl.innerHTML = clinics.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('');
+  if(addCl) addCl.value = currentCorpName || '';
   openM('modal-add');
 }
 function openM(id){ document.getElementById(id).classList.add('open'); }
