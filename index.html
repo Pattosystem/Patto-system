@@ -1929,7 +1929,7 @@ function renderInv(filter){
       <td>${item.clinic}</td>
       <td style="text-align:center;color:${low?'var(--red)':'var(--ink)'}">
         ${(item.units_per_outer && item.units_per_outer > 1)
-          ? '<div style="font-size:14px;font-weight:800;line-height:1.3;color:' + (low?'var(--red)':'var(--ink)') + '">' + (item.outer_quantity||0) + (item.outer_unit||'箱') + (item.inner_quantity>0?' '+item.inner_quantity+(item.inner_unit||'個'):'') + '</div><div style="font-size:11px;font-weight:400;color:var(--ink3);line-height:1.4">(' + item.qty + (item.inner_unit||'個') + ')</div>'
+          ? '<div style="font-size:14px;font-weight:800;line-height:1.3;color:' + (low?'var(--red)':'var(--ink)') + '">' + (item.outer_quantity||0) + (item.outer_unit||'箱') + '</div><div style="font-size:11px;font-weight:400;color:var(--ink3);line-height:1.4">(' + item.qty + (item.inner_unit||'個') + ')</div>'
           : '<span style="font-size:15px;font-weight:800">' + qtyDisplay + '</span>'
         }
       </td>
