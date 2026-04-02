@@ -2244,6 +2244,57 @@ function submitDelivery() {
 
   closeM('modal-delivery');
   toast(icons[dlvPurpose], '出庫：' + document.getElementById('dlv-name').textContent + ' × ' + unitLabel + '（' + labels[dlvPurpose] + '）');
+
+  // 在庫数を実際に減らす
+  if(item) {
+    const idx = invData.indexOf(item);
+    if(idx >= 0) {
+      if(item.units_per_outer && item.units_per_outer > 1) {
+        // 箱・バラ管理商品：バラ数から順に減らす
+        let remaining = totalInner;
+        let newInner = (item.inner_quantity || 0) - remaining;
+        let newOuter = item.outer_quantity || 0;
+        // バラが足りない分は箱を崩す
+        while(newInner < 0 && newOuter > 0) {
+          newOuter--;
+          newInner += item.units_per_outer;
+        }
+        if(newInner < 0) newInner = 0;
+        invData[idx].inner_quantity = newInner;
+        invData[idx].outer_quantity = newOuter;
+        invData[idx].qty = newOuter * item.units_per_outer + newInner;
+      } else {
+        invData[idx].qty = Math.max(0, item.qty - totalInner);
+      }
+
+      // Supabaseに保存
+      const newQty = invData[idx].qty;
+      const staffName = document.getElementById('dlv-staff').value || document.getElementById('uname').textContent;
+      const memo = document.getElementById('dlv-memo').value;
+      db.from('inventory').update({
+        quantity: newQty,
+        outer_quantity: invData[idx].outer_quantity,
+        inner_quantity: invData[idx].inner_quantity,
+        updated_at: new Date().toISOString()
+      }).eq('id', item.id).then(function(r){ if(r.error) console.error(r.error); });
+
+      // 履歴に記録
+      db.from('stock_history').insert({
+        inventory_id: item.id,
+        product_name: item.name,
+        action_type: 'out',
+        quantity: totalInner,
+        clinic: item.clinic,
+        staff_name: staffName,
+        memo: (labels[dlvPurpose] + (memo ? ' ' + memo : ''))
+      }).then(function(r){ if(r.error) console.error(r.error); });
+
+      // 在庫一覧を更新
+      if(document.getElementById('pg-inventory').classList.contains('active')) {
+        renderInv('all');
+      }
+    }
+  }
 }
 
 function openM(id){document.getElementById(id).classList.add('open')}
