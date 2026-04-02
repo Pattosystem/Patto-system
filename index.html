@@ -1948,10 +1948,15 @@ function renderInv(filter){
 async function deleteInventory(id, name) {
   if(!confirm('「' + name + '」を削除しますか？\nこの操作は取り消せません。')) return;
   _skipRealtimeUntil = Date.now() + 3000;
-  // 削除前に操作履歴に記録
   const item = invData.find(function(i){ return i.id === id; });
+  // 先に操作履歴を削除
+  await db.from('stock_history').delete().eq('inventory_id', id);
+  // 在庫を削除
+  const { error } = await db.from('inventory').delete().eq('id', id);
+  if(error){ toast('❌', '削除に失敗しました'); console.error(error); return; }
+  // 削除後にinventory_idなしで履歴に記録
   await db.from('stock_history').insert({
-    inventory_id: id,
+    inventory_id: null,
     product_name: name,
     action_type: 'delete',
     quantity: item ? item.qty : 0,
@@ -1959,10 +1964,6 @@ async function deleteInventory(id, name) {
     staff_name: document.getElementById('uname').textContent,
     memo: '在庫削除'
   });
-  // 操作履歴を削除してから在庫を削除
-  await db.from('stock_history').delete().eq('inventory_id', id);
-  const { error } = await db.from('inventory').delete().eq('id', id);
-  if(error){ toast('❌', '削除に失敗しました'); console.error(error); return; }
   const idx = invData.findIndex(function(i){ return i.id === id; });
   if(idx >= 0) invData.splice(idx, 1);
   renderInv('all');
