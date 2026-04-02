@@ -360,7 +360,7 @@ tr:hover td{background:#FAFCFF}
     <button class="btn-primary" onclick="openAddModal()">＋ 入荷登録</button>
     <span id="corp-name-badge" style="font-size:11px;font-weight:700;color:var(--skyd);background:var(--skyp);border:1.5px solid #A8D0F5;border-radius:20px;padding:4px 10px;"></span>
     <div class="nbell">🔔<div class="ndot"></div></div>
-    <div class="uchip" onclick="openM('modal-user')">
+    <div class="uchip" onclick="openUserModal()">
       <div class="uav" id="uav">田</div>
       <span class="uname-txt" id="uname">田中 院長</span>
     </div>
@@ -910,10 +910,7 @@ tr:hover td{background:#FAFCFF}
   <div class="modal">
     <div class="modal-title">👤 操作者の切り替え</div>
     <p style="font-size:12px;color:var(--ink3);background:var(--skyp);padding:8px 12px;border-radius:8px;margin-bottom:13px">操作者名はすべての履歴に自動記録されます。</p>
-    <div class="uo" onclick="setUser('田中 院長','田')"><div class="uo-av">田</div><div><div class="uo-name">田中 院長</div><div class="uo-role">管理者 · 銀座本院</div></div><span style="margin-left:auto;font-size:10px;font-weight:700;background:var(--skyp);color:var(--skyd);border:1.5px solid var(--sky);padding:2px 8px;border-radius:7px">管理者</span></div>
-    <div class="uo" onclick="setUser('山田 医師','山')"><div class="uo-av">山</div><div><div class="uo-name">山田 医師</div><div class="uo-role">医師 · 銀座本院</div></div></div>
-    <div class="uo" onclick="setUser('鈴木 看護師','鈴')"><div class="uo-av">鈴</div><div><div class="uo-name">鈴木 看護師</div><div class="uo-role">看護師 · 渋谷分院</div></div></div>
-    <div class="uo" onclick="setUser('佐藤 看護師','佐')"><div class="uo-av">佐</div><div><div class="uo-name">佐藤 看護師</div><div class="uo-role">看護師 · 新宿分院</div></div></div>
+    <div id="user-list"></div>
     <div class="mfoot"><button class="btn-mo-ghost" onclick="closeM('modal-user')">閉じる</button></div>
   </div>
 </div>
@@ -2128,6 +2125,28 @@ function openAddModal() {
 function openM(id){ document.getElementById(id).classList.add('open'); }
 function closeM(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.ov').forEach(function(o){ o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); }); });
+function openUserModal() {
+  // mData.staffから動的生成
+  var ul = document.getElementById('user-list');
+  if(ul) {
+    if(mData.staff.length === 0) {
+      ul.innerHTML = '<div style="padding:16px;text-align:center;color:var(--ink3);font-size:13px">'
+        + 'スタッフが登録されていません<br>'
+        + '<span style="font-size:11px">マスター管理 → スタッフから追加してください</span></div>';
+    } else {
+      ul.innerHTML = mData.staff.map(function(s) {
+        var initial = s.name.charAt(0);
+        return '<div class="uo" onclick="setUser('' + s.name.replace(/'/g,"\'") + '','' + initial + '')">'
+          + '<div class="uo-av">' + initial + '</div>'
+          + '<div><div class="uo-name">' + s.name + '</div>'
+          + '<div class="uo-role">' + s.role + '</div></div>'
+          + '</div>';
+      }).join('');
+    }
+  }
+  openM('modal-user');
+}
+
 function setUser(name, initial){ document.getElementById('uname').textContent=name; document.getElementById('uav').textContent=initial; closeM('modal-user'); toast('👤',name+'として操作中'); }
 function onClinic(){ const v=document.getElementById('csel').value; toast('🏥',(v==='all'?'全院統合':CLINICS[v])+'の在庫を表示中'); if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all'); }
 function toast(icon, msg){ const el=document.createElement('div'); el.className='toast'; el.innerHTML='<span>'+icon+'</span><span>'+msg+'</span>'; document.getElementById('toasts').appendChild(el); setTimeout(function(){ el.remove(); }, 3000); }
