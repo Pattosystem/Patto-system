@@ -1472,7 +1472,12 @@ async function loadInventoryFromDB() {
         max: row.max_quantity || 50,
         expiry: row.expiry_date || '2027-01-01',
         lot: row.lot_number || '',
-        price: row.unit_price || 0
+        price: row.unit_price || 0,
+        outer_unit: row.outer_unit || '箱',
+        inner_unit: row.inner_unit || '個',
+        units_per_outer: row.units_per_outer || 1,
+        outer_quantity: row.outer_quantity || 0,
+        inner_quantity: row.inner_quantity || 0
       });
     });
     // 在庫一覧ページが表示中なら更新
