@@ -1486,7 +1486,7 @@ async function loadInventoryFromDB() {
       try{ renderInv('all'); }catch(e){ console.log('renderInv error:',e); }
     }
     // 各render関数を安全に呼び出す
-    try{ renderAlerts(); }catch(e){}
+    try{ refreshKPI(); }catch(e){}
     try{ renderPU(); }catch(e){}
     try{ renderCS(); }catch(e){}
     try{ renderT3(); }catch(e){}
@@ -1682,17 +1682,28 @@ function go(name,el){
 }
 
 function renderAlerts(){
-  document.getElementById('al-list').innerHTML=alertData.map((a,i)=>`
-    <div class="arow">
-      <div class="apip ${a.lv}"></div>
-      <div class="ainfo">
-        <div class="aname">${a.icon} ${a.name}</div>
-        <div class="aclinic">🏥 ${a.clinic}</div>
-      </div>
-      <span class="achip ${a.lv}">残${a.qty}</span>
-      <button class="abtn" onclick="orderAlert(${i})">発注</button>
-    </div>`).join('');
-  document.getElementById('al-cnt').textContent=alertData.length+'件';
+  const today = new Date();
+  // invDataから要補充アイテムを生成
+  const alerts = invData.filter(function(i){ return i.qty <= i.min; }).map(function(i){
+    return { name: i.name, clinic: i.clinic, qty: i.qty, lv: 'critical', icon: '💉', idx: invData.indexOf(i) };
+  }).concat(invData.filter(function(i){ return i.qty > i.min && i.qty <= i.min * 1.5; }).map(function(i){
+    return { name: i.name, clinic: i.clinic, qty: i.qty, lv: 'warning', icon: '💉', idx: invData.indexOf(i) };
+  }));
+
+  if(alerts.length === 0) {
+    document.getElementById('al-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">補充が必要な在庫はありません ✅</div>';
+    document.getElementById('al-cnt').textContent = '0件';
+    return;
+  }
+  document.getElementById('al-list').innerHTML = alerts.map(function(a, i){
+    return '<div class="arow">'
+      + '<div class="apip ' + a.lv + '"></div>'
+      + '<div class="ainfo"><div class="aname">' + a.icon + ' ' + a.name + '</div><div class="aclinic">🏥 ' + a.clinic + '</div></div>'
+      + '<span class="achip ' + a.lv + '">残' + a.qty + '</span>'
+      + '<button class="abtn" onclick="addOrder(\'' + a.name.replace(/'/g,"\\'") + '\',\'' + a.clinic + '\',\'—\',\'要確認\')">発注</button>'
+      + '</div>';
+  }).join('');
+  document.getElementById('al-cnt').textContent = alerts.length + '件';
 }
 // 発注データ
 let ordersData = {
@@ -1839,24 +1850,32 @@ function orderAlert(i) {
 }
 
 function renderExpiry(){
-  const today=new Date();
-  document.getElementById('exp-list').innerHTML=expiryData.map(e=>{
-    const d=new Date(e.date);
-    const days=Math.ceil((d-today)/86400000);
-    const ds=(d.getMonth()+1)+'月'+d.getDate()+'日';
-    const c=days<=14?'var(--red)':days<=30?'var(--amber)':'var(--green)';
-    const bg=days<=14?'var(--redp)':days<=30?'var(--amberp)':'var(--greenp)';
-    const lv=days<=14?'緊急':days<=30?'注意':'正常';
-    return `<div class="erow">
-      <div class="einfo">
-        <div class="ename">${e.name}</div>
-        <div class="eclinic">${e.clinic} · ${e.qty}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">
-        <div style="font-size:12.5px;font-weight:700;color:${c};white-space:nowrap">${ds}まで</div>
-        <span class="etag" style="background:${bg};color:${c};white-space:nowrap">残${days}日・${lv}</span>
-      </div>
-    </div>`;
+  const today = new Date();
+  // invDataから期限切れ間近アイテムを生成（90日以内）
+  const items = invData
+    .filter(function(i){ return i.expiry; })
+    .map(function(i){
+      const d = new Date(i.expiry);
+      return { name: i.name, clinic: i.clinic, qty: i.qty, date: i.expiry, days: Math.ceil((d - today) / 86400000), d: d };
+    })
+    .filter(function(i){ return i.days <= 90; })
+    .sort(function(a, b){ return a.days - b.days; });
+
+  if(items.length === 0) {
+    document.getElementById('exp-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">期限切れ間近の在庫はありません ✅</div>';
+    return;
+  }
+  document.getElementById('exp-list').innerHTML = items.map(function(e){
+    const c = e.days <= 14 ? 'var(--red)' : e.days <= 30 ? 'var(--amber)' : 'var(--green)';
+    const bg = e.days <= 14 ? 'var(--redp)' : e.days <= 30 ? 'var(--amberp)' : 'var(--greenp)';
+    const lv = e.days <= 14 ? '緊急' : e.days <= 30 ? '注意' : '正常';
+    const ds = (e.d.getMonth()+1) + '月' + e.d.getDate() + '日';
+    return '<div class="erow">'
+      + '<div class="einfo"><div class="ename">' + e.name + '</div><div class="eclinic">' + e.clinic + ' · ' + e.qty + '個</div></div>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:100px">'
+      + '<div style="font-size:12.5px;font-weight:700;color:' + c + ';white-space:nowrap">' + ds + 'まで</div>'
+      + '<span class="etag" style="background:' + bg + ';color:' + c + ';white-space:nowrap">残' + e.days + '日・' + lv + '</span>'
+      + '</div></div>';
   }).join('');
 }
 
@@ -2687,10 +2706,20 @@ function impExecute() {
 }
 
 function refreshKPI() {
-  const low = invData.filter(i=>i.qty<=i.min).length;
-  document.querySelectorAll('.kpi')[0].querySelector('.kpi-num').textContent = invData.length;
-  document.querySelectorAll('.kpi')[1].querySelector('.kpi-num').textContent = low;
+  const today = new Date();
+  const low = invData.filter(function(i){ return i.qty <= i.min; }).length;
+  const expiring = invData.filter(function(i){
+    if(!i.expiry) return false;
+    const days = Math.ceil((new Date(i.expiry) - today) / 86400000);
+    return days <= 30 && days >= 0;
+  }).length;
+  const total = invData.length;
+  const kpis = document.querySelectorAll('.kpi');
+  if(kpis[0]) kpis[0].querySelector('.kpi-num').textContent = low;
+  if(kpis[1]) kpis[1].querySelector('.kpi-num').textContent = expiring;
+  if(kpis[2]) kpis[2].querySelector('.kpi-num').textContent = total;
   renderAlerts();
+  renderExpiry();
 }
 
 function downloadTemplate() {
