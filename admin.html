@@ -1177,6 +1177,8 @@ async function loadInventoryFromDB() {
     if(document.getElementById('pg-inventory').classList.contains('active')) {
       renderInv('all');
     }
+    // クリニック選択肢も再更新（非同期読み込み後の確実な反映）
+    updateClinicSelects();
     // クイック移送の製品リストを更新
     updateProductSelects();
   }
@@ -1218,10 +1220,12 @@ db.channel('inventory-changes')
 // ══════════════════════════════
 // クリニック名セレクトを一括更新
 function updateClinicSelects() {
-  // mData.clinicから店舗リストを取得
-  const clinics = mData.clinic.length > 0
+  // 必ずmData.clinicから取得（initAppで設定済み）
+  const clinics = (mData.clinic && mData.clinic.length > 0)
     ? mData.clinic.map(function(c){ return c.name; })
-    : [currentCorpName];
+    : (currentCorpName ? [currentCorpName] : []);
+
+  if(clinics.length === 0) return;
 
   // 入荷登録モーダル
   const addClinic = document.getElementById('add-clinic');
@@ -1241,6 +1245,7 @@ function updateClinicSelects() {
       csel.innerHTML = '<option value="all">🏥 '+clinics[0]+'</option>';
     }
   }
+  console.log('updateClinicSelects:', clinics);
 }
 
 function refreshKPI() {
