@@ -243,9 +243,54 @@ tr:hover td{background:#FAFCFF}
 .imp-map-arrow{text-align:center;font-size:18px;color:var(--sky);font-weight:800}
 .imp-map-sel{width:100%;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:8px;padding:7px 10px;font-size:12.5px;font-family:inherit;color:var(--ink);outline:none;appearance:none;transition:border-color .13s}
 .imp-map-sel:focus{border-color:var(--sky)}
+
+/* ログイン画面 */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:2000}
+.login-box{background:var(--bg2);border-radius:20px;padding:40px 44px;width:380px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.4);border:1px solid var(--bg4)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:8px;justify-content:center}
+.login-logo-icon{width:44px;height:44px;background:#EA580C;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.login-title{font-family:'Outfit',sans-serif;font-size:26px;font-weight:800;color:#fff;text-align:center}
+.login-sub{font-size:12px;color:#6EA8D4;text-align:center;margin-bottom:28px}
+.login-label{font-size:11px;font-weight:700;color:#6EA8D4;display:block;margin-bottom:6px}
+.login-inp{width:100%;background:var(--bg3);border:1.5px solid var(--bg4);border-radius:10px;padding:12px 14px;font-size:14px;font-family:inherit;color:#fff;outline:none;transition:border-color .13s;margin-bottom:14px}
+.login-inp:focus{border-color:var(--sky)}
+.login-inp::placeholder{color:#3A6080}
+.login-btn{width:100%;background:var(--sky);color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s;margin-top:4px}
+.login-btn:hover{background:var(--skyd);transform:translateY(-1px)}
+.login-btn:active{transform:translateY(0)}
+.login-err{background:var(--redp);color:var(--red);border-radius:8px;padding:9px 12px;font-size:12.5px;font-weight:700;text-align:center;margin-bottom:14px;display:none}
 </style>
 </head>
 <body>
+
+<!-- ログイン画面 -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg width="28" height="28" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
+          <text x="22" y="34" text-anchor="middle" font-size="36" font-weight="800" fill="white" font-family="sans-serif">P</text>
+          <circle cx="36" cy="10" r="8" fill="white"/>
+          <polyline points="32,10 35,13 40,7" fill="none" stroke="#EA580C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="login-title">PattoStock</div>
+    <div class="login-sub">美容クリニック向け 在庫管理システム</div>
+    <div id="login-err" class="login-err">クリニックコードまたはパスワードが違います</div>
+    <label class="login-label">クリニックコード</label>
+    <input id="login-code" class="login-inp" type="text" placeholder="例: demo01" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    <label class="login-label">パスワード</label>
+    <input id="login-pass" class="login-inp" type="password" placeholder="パスワードを入力" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">ログイン →</button>
+    <div style="font-size:11px;color:#3A6080;text-align:center;margin-top:16px">
+      ご不明な点はシステム担当者にお問い合わせください
+    </div>
+  </div>
+</div>
+
+<!-- メインアプリ（ログイン後に表示） -->
+<div id="main-app" style="display:none">
 
 <!-- NAV -->
 <nav class="nav">
@@ -285,11 +330,13 @@ tr:hover td{background:#FAFCFF}
     </select>
     <div class="nsearch" id="nav-search" style="display:none"><span style="color:#557799;font-size:12px">🔍</span><input id="nav-search-input" placeholder="製品名・ロット番号..."></div>
     <button class="btn-primary" onclick="openM('modal-add')">＋ 入荷登録</button>
+    <span id="corp-name-badge" style="font-size:11px;font-weight:700;color:var(--skyd);background:var(--skyp);border:1.5px solid #A8D0F5;border-radius:20px;padding:4px 10px;"></span>
     <div class="nbell">🔔<div class="ndot"></div></div>
     <div class="uchip" onclick="openM('modal-user')">
       <div class="uav" id="uav">田</div>
       <span class="uname-txt" id="uname">田中 院長</span>
     </div>
+    <button onclick="doLogout()" style="background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:4px">ログアウト</button>
   </div>
 </nav>
 
@@ -911,6 +958,53 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ══════════════════════════════
+// ログイン状態管理
+// ══════════════════════════════
+let currentCorpId = null;
+let currentCorpName = '';
+
+async function doLogin() {
+  const code = document.getElementById('login-code').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const errEl = document.getElementById('login-err');
+  const btn = document.getElementById('login-btn');
+  if(!code || !pass) { errEl.style.display='block'; errEl.textContent='クリニックコードとパスワードを入力してください'; return; }
+  btn.textContent = '認証中...'; btn.disabled = true;
+  errEl.style.display = 'none';
+  const { data, error } = await db.from('corporations')
+    .select('id, name, clinic_code, password_plain')
+    .eq('clinic_code', code)
+    .eq('password_plain', pass)
+    .limit(1);
+  btn.textContent = 'ログイン →'; btn.disabled = false;
+  if(error || !data || data.length === 0) {
+    errEl.style.display = 'block';
+    errEl.textContent = 'クリニックコードまたはパスワードが違います';
+    return;
+  }
+  currentCorpId = data[0].id;
+  currentCorpName = data[0].name;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  // ナビにクリニック名を表示
+  const corpBadge = document.getElementById('corp-name-badge');
+  if(corpBadge) corpBadge.textContent = currentCorpName;
+  // アプリ初期化
+  initApp();
+}
+
+function doLogout() {
+  currentCorpId = null;
+  currentCorpName = '';
+  invData.length = 0;
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-code').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+// ══════════════════════════════
 // グローバルデータ
 // ══════════════════════════════
 const CLINICS = {1:'銀座本院', 2:'渋谷分院', 3:'新宿分院'};
@@ -969,7 +1063,8 @@ let mData = {
 // Supabase データ読み込み
 // ══════════════════════════════
 async function loadInventoryFromDB() {
-  const { data, error } = await db.from('inventory').select('*').order('id');
+  if(!currentCorpId) return;
+  const { data, error } = await db.from('inventory').select('*').eq('corporation_id', currentCorpId).order('id');
   if(error){ console.error('在庫読み込みエラー:', error); return; }
   if(data) {
     invData.length = 0;
@@ -1482,7 +1577,8 @@ function submitAdd() {
     units_per_outer: unitsPerOuter, outer_quantity: outerQty, inner_quantity: innerQty,
     min_quantity: parseInt(document.getElementById('add-min').value) || 3,
     unit_price: parseInt(document.getElementById('add-price').value) || 0,
-    expiry_date: expiry || null, lot_number: document.getElementById('add-lot').value.trim()
+    expiry_date: expiry || null, lot_number: document.getElementById('add-lot').value.trim(),
+    corporation_id: currentCorpId
   };
   db.from('inventory').insert(newRow).then(function(r) {
     if(r.error){ console.error(r.error); toast('❌','登録に失敗しました'); return; }
@@ -1915,33 +2011,27 @@ function onClinic(){ const v=document.getElementById('csel').value; toast('🏥'
 function toast(icon, msg){ const el=document.createElement('div'); el.className='toast'; el.innerHTML='<span>'+icon+'</span><span>'+msg+'</span>'; document.getElementById('toasts').appendChild(el); setTimeout(function(){ el.remove(); }, 3000); }
 
 // ══════════════════════════════
-// ★ 初期化
 // ══════════════════════════════
-(function() {
-  // 今日の日付表示
+// ログイン後の初期化
+// ══════════════════════════════
+function initApp() {
   const now = new Date();
   const dateEl = document.getElementById('dash-date');
-  if(dateEl) dateEl.textContent = now.toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'long'}) + ' ｜ 全3院の在庫状況';
-
-  // レポートのサブタイトル
+  if(dateEl) dateEl.textContent = now.toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'long'}) + ' ｜ 在庫状況';
   const reportSub = document.getElementById('report-sub');
-  if(reportSub) reportSub.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月 ｜ 全院';
-
-  // モード初期化
+  if(reportSub) reportSub.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月';
   setMode(currentMode);
   mRenderAll();
   renderTrHist();
   renderOrders();
-
-  // ★ Supabaseからデータを読み込んでダッシュボードを更新
   initDBData().then(function() {
-    console.log('Supabase 初期化完了');
+    console.log('Supabase 初期化完了 corp:', currentCorpId);
   }).catch(function(err) {
     console.error('Supabase 初期化エラー:', err);
-    // エラー時は空のKPIを表示
     refreshKPI();
   });
-})();
+}
 </script>
 
+</div><!-- /main-app -->
 </body></html>
