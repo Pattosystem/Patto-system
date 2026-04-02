@@ -769,8 +769,8 @@ tr:hover td{background:#FAFCFF}
     </div>
     <div style="background:#fff;border-radius:var(--r);padding:20px;box-shadow:var(--sh)">
       <div style="font-size:13.5px;font-weight:800;color:var(--ink);margin-bottom:14px">🏥 クリニック情報</div>
-      <div class="fgroup"><label class="flabel">法人名</label><input class="finp" value="医療法人社団 田中クリニックグループ"></div>
-      <div class="fgroup"><label class="flabel">代表者名</label><input class="finp" value="田中 太郎"></div>
+      <div class="fgroup"><label class="flabel">法人名</label><input class="finp" id="setting-corp-name" placeholder="例: 医療法人社団 〇〇クリニック"></div>
+      <div class="fgroup"><label class="flabel">代表者名</label><input class="finp" id="setting-rep-name" placeholder="例: 山田 太郎"></div>
       <div class="fgroup"><label class="flabel">管理者メール</label><input class="finp" id="admin-email" type="email" value="admin@tanaka-clinic.jp"></div>
       <button class="btn-save" onclick="toast('✅','設定を保存しました')">保存する</button>
       <div style="background:var(--skyp);border-radius:10px;padding:14px;margin-top:12px">
@@ -1130,21 +1130,13 @@ let campaignData = [
 let selectedCampaignId = null;
 
 let mData = {
-  clinic:[
-    {id:1, name:'銀座本院', addr:'東京都中央区銀座1-1-1', tel:'03-1111-2222', type:'main', active:'1'},
-    {id:2, name:'渋谷分院', addr:'東京都渋谷区道玄坂2-2-2', tel:'03-3333-4444', type:'branch', active:'1'},
-    {id:3, name:'新宿分院', addr:'東京都新宿区新宿3-3-3', tel:'03-5555-6666', type:'branch', active:'1'},
-  ],
+  clinic:[], // ログイン後にinitAppで設定
   cat:[
     {id:1, name:'注射・点滴薬剤', icon:'💉', desc:'ボトックス・ヒアルロン酸など', storage:'冷蔵保存（2〜8℃）'},
     {id:2, name:'スキンケア製品', icon:'🧴', desc:'美容液・クリームなど', storage:'常温保存'},
     {id:3, name:'消耗品', icon:'📋', desc:'針・シリンジ・ガーゼなど', storage:'常温保存'},
   ],
-  staff:[
-    {id:1, name:'田中 太郎', role:'院長', clinic:'銀座本院', perm:'admin', email:'tanaka@clinic.jp'},
-    {id:2, name:'山田 花子', role:'医師', clinic:'銀座本院', perm:'staff', email:'yamada@clinic.jp'},
-    {id:3, name:'鈴木 さくら', role:'看護師', clinic:'渋谷分院', perm:'staff', email:'suzuki@clinic.jp'},
-  ],
+  staff:[], // ログイン後にinitAppで設定
   supplier:[
     {id:1, name:'アラガン・ジャパン', person:'山田 次郎', tel:'03-9999-0001', email:'info@allergan.jp', items:'ボトックス、ジュビダーム'},
     {id:2, name:'アッヴィ合同会社', person:'佐藤 三郎', tel:'03-9999-0002', email:'info@abbvie.jp', items:'ジュビダーム各種'},
@@ -2134,6 +2126,16 @@ function initApp() {
   if(dateEl) dateEl.textContent = now.toLocaleDateString('ja-JP', {year:'numeric',month:'long',day:'numeric',weekday:'long'}) + ' ｜ 在庫状況';
   const reportSub = document.getElementById('report-sub');
   if(reportSub) reportSub.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月';
+
+  // ★ ログインしたクリニックでマスターデータを初期化
+  mData.clinic = [{id:1, name:currentCorpName, addr:'', tel:'', type:'main', active:'1'}];
+  mData.staff = [];
+  mData.supplier = [];
+
+  // 設定画面のクリニック情報を反映
+  const corpNameInput = document.getElementById('setting-corp-name');
+  if(corpNameInput) corpNameInput.value = currentCorpName;
+
   setMode(currentMode);
   mRenderAll();
   renderTrHist();
