@@ -1516,19 +1516,31 @@ async function renderHist(filter) {
   const el = document.getElementById('hist-list');
   if(!el) return;
   el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">読み込み中...</div>';
-  // 自分のクリニックの在庫IDだけに絞る
+
+  // 自分のクリニック名一覧を取得（invData + mData.clinicの両方から）
+  const myClinics = [...new Set(
+    invData.map(function(i){ return i.clinic; })
+    .concat(mData.clinic.map(function(c){ return c.name; }))
+    .concat([currentCorpName])
+  )].filter(Boolean);
+
+  // inventory_id でもクリニック名でも両方拾えるようにOR検索
   const myInventoryIds = invData.map(function(i){ return i.id; }).filter(Boolean);
-  var query = db.from('stock_history').select('*').order('created_at', {ascending:false}).limit(200);
-  if(myInventoryIds.length > 0) {
-    query = query.in('inventory_id', myInventoryIds);
-  } else {
-    // 在庫がまだない場合は空表示
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">履歴がありません</div>';
-    return;
-  }
-  const { data, error } = await query;
+
+  var { data, error } = await db.from('stock_history')
+    .select('*')
+    .order('created_at', {ascending:false})
+    .limit(300);
+
   if(error){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red)">読み込みエラー</div>'; return; }
-  let filtered = data || [];
+
+  // 自分のクリニックに関係するレコードだけ絞る
+  var allData = (data || []).filter(function(h) {
+    return myClinics.includes(h.clinic)
+      || (h.inventory_id && myInventoryIds.includes(h.inventory_id));
+  });
+  if(error){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red)">読み込みエラー</div>'; return; }
+  let filtered = allData;
   if(filter === 'use') filtered = filtered.filter(function(h){ return h.action_type === 'out'; });
   if(filter === 'add') filtered = filtered.filter(function(h){ return h.action_type === 'in'; });
   if(filtered.length === 0){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">履歴がありません</div>'; return; }
