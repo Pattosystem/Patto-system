@@ -449,17 +449,9 @@ tr:hover td{background:#FAFCFF}
             <option>製品を選択...</option>
           </select>
           <div class="tqf-row">
-            <select class="tqf" id="q-from" style="flex:1">
-              <option value="1">銀座本院（元）</option>
-              <option value="2">渋谷分院（元）</option>
-              <option value="3">新宿分院（元）</option>
-            </select>
+            <select class="tqf" id="q-from" style="flex:1"></select>
             <span class="tqf-arrow">→</span>
-            <select class="tqf" id="q-to" style="flex:1">
-              <option value="2">渋谷分院（先）</option>
-              <option value="3">新宿分院（先）</option>
-              <option value="1">銀座本院（先）</option>
-            </select>
+            <select class="tqf" id="q-to" style="flex:1"></select>
           </div>
           <div class="tqf-row">
             <input class="tqf tqf-num" type="number" id="q-qty" placeholder="数量" min="1">
@@ -507,9 +499,9 @@ tr:hover td{background:#FAFCFF}
       <div class="mform-title">移送を登録する</div>
       <div class="fgroup"><label class="flabel">製品</label><select class="finp" id="tr-prod"><option>選択してください</option></select></div>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;margin-bottom:10px">
-        <div><label class="flabel">移送元</label><select class="finp" id="tr-from"><option value="1">銀座本院</option><option value="2">渋谷分院</option><option value="3">新宿分院</option></select></div>
+        <div><label class="flabel">移送元</label><select class="finp" id="tr-from"></select></div>
         <div style="font-size:18px;color:var(--sky);padding-bottom:4px;text-align:center">→</div>
-        <div><label class="flabel">移送先</label><select class="finp" id="tr-to"><option value="2">渋谷分院</option><option value="3">新宿分院</option><option value="1">銀座本院</option></select></div>
+        <div><label class="flabel">移送先</label><select class="finp" id="tr-to"></select></div>
       </div>
       <div class="fgroup"><label class="flabel">数量</label><input class="finp" type="number" id="tr-qty" placeholder="例: 10" min="1"></div>
       <div class="fgroup"><label class="flabel">備考（任意）</label><input class="finp" type="text" id="tr-note" placeholder="例: 月初補充分"></div>
@@ -1281,6 +1273,24 @@ db.channel('inventory-changes')
 // ══════════════════════════════
 // ★修正: refreshKPI - IDで確実に更新
 // ══════════════════════════════
+// 移送フォームのselect選択肢を更新
+function updateTransferSelects() {
+  var clinics = (mData.clinic && mData.clinic.length > 0)
+    ? mData.clinic.map(function(c){ return c.name; })
+    : [currentCorpName];
+
+  var selIds = ['tr-from','tr-to','q-from','q-to'];
+  selIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if(!el) return;
+    var isSrc = id.includes('from');
+    var suffix = id.includes('q-') ? (isSrc ? '（元）' : '（先）') : '';
+    el.innerHTML = clinics.map(function(n, i) {
+      return '<option value="' + (i+1) + '">' + n + suffix + '</option>';
+    }).join('');
+  });
+}
+
 // クリニック名セレクトを一括更新
 function updateClinicSelects() {
   // 必ずmData.clinicから取得（initAppで設定済み）
@@ -1309,6 +1319,7 @@ function updateClinicSelects() {
     }
   }
   console.log('updateClinicSelects:', clinics);
+  updateTransferSelects();
 }
 
 function refreshKPI() {
@@ -1963,6 +1974,12 @@ function statusPreview(){
 // 運用モード
 // ══════════════════════════════
 function setMode(mode) {
+  // 複数院モードは2院以上登録している場合のみ選択可能
+  if(mode === 'multi' && mData.clinic.length < 2) {
+    toast('⚠️', '複数院モードはマスター管理でクリニックを2院以上登録してから使用できます');
+    // 1院モードに戻す
+    mode = 'single';
+  }
   currentMode = mode;
   document.getElementById('mode-single').classList.toggle('active', mode==='single');
   document.getElementById('mode-multi').classList.toggle('active', mode==='multi');
@@ -1970,13 +1987,30 @@ function setMode(mode) {
   const dmain = document.querySelector('.d-main');
   if(dmain) dmain.style.gridTemplateColumns = mode==='multi' ? 'minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr)' : 'minmax(0,1fr) minmax(0,1fr)';
   applyClinicColToTable();
+
+  // 複数院モードカードの見た目制御
+  const multiCard = document.getElementById('mode-multi');
+  if(multiCard) {
+    if(mData.clinic.length < 2) {
+      multiCard.style.opacity = '0.4';
+      multiCard.style.cursor = 'not-allowed';
+      multiCard.title = 'クリニックを2院以上登録してから使用できます';
+    } else {
+      multiCard.style.opacity = '1';
+      multiCard.style.cursor = 'pointer';
+      multiCard.title = '';
+    }
+  }
+
   const texts = {
     single:'<strong style="color:var(--ink);font-size:12.5px">1院モードでは院間移送・クリニック選択が非表示になります</strong>',
     multi:'<strong style="color:var(--ink);font-size:12.5px">複数院モードでは院間移送・クリニック選択がすべて表示されます</strong>'
   };
   const md = document.getElementById('mode-diff');
   if(md) md.innerHTML = texts[mode];
-  toast('🏥', mode==='single'?'1院モードに切り替えました':'複数院モードに切り替えました');
+
+  // 移送フォームのselect選択肢を更新
+  updateTransferSelects();
 }
 
 function applyClinicColToTable() {
@@ -2222,7 +2256,7 @@ function go(name, el) {
   if(name === 'inventory') renderInv('all');
   if(name === 'history') renderHist('all');
   if(name === 'expiry') renderExpiryPage();
-  if(name === 'transfer') renderTrHist();
+  if(name === 'transfer') { renderTrHist(); updateTransferSelects(); }
   if(name === 'master') { mRenderAll(); fillStaffClinic(); }
   if(name === 'import') impReset();
   if(name === 'orders') renderOrders();
