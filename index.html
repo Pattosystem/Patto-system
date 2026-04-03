@@ -846,7 +846,11 @@ tr:hover td{background:#FAFCFF}
     <div class="fg">
       <div class="fg-g full"><label>製品名 *</label><input id="add-name" type="text" placeholder="例: リジュランスキンブースター"></div>
       <div class="fg-g"><label>カテゴリ</label><select id="add-cat"><option value="injection">注射・点滴薬剤</option><option value="skincare">スキンケア製品</option><option value="device">医療機器・器具</option><option value="supply">消耗品</option></select></div>
-      <input type="hidden" id="add-clinic" value="">
+      <div class="fg-g" id="add-clinic-wrap" style="display:none">
+        <label>入荷先クリニック</label>
+        <select id="add-clinic" class="finp"></select>
+      </div>
+      <input type="hidden" id="add-clinic-single" value="">
       <div class="fg-g full" style="background:var(--skyp);border-radius:10px;padding:12px;border:1.5px solid #A8D0F5">
         <div style="font-size:11px;font-weight:800;color:var(--skyd);margin-bottom:8px">📦 単位設定</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -1824,7 +1828,7 @@ function submitAdd() {
   if(outerQty === 0 && innerQty === 0){ toast('⚠️','入荷数量を入力してください'); return; }
   const expiry = document.getElementById('add-expiry').value;
   const newRow = {
-    name, category: document.getElementById('add-cat').value, clinic: document.getElementById('add-clinic').value,
+    name, category: document.getElementById('add-cat').value, clinic: (document.getElementById('add-clinic-wrap').style.display !== 'none' ? document.getElementById('add-clinic').value : document.getElementById('add-clinic-single').value) || currentClinic || currentCorpName,
     quantity: totalQty, outer_unit: outerUnit, inner_unit: innerUnit,
     units_per_outer: unitsPerOuter, outer_quantity: outerQty, inner_quantity: innerQty,
     min_quantity: parseInt(document.getElementById('add-min').value) || 3,
@@ -2597,9 +2601,30 @@ async function saveInvEdit() {
 }
 
 function openAddModal() {
-  // 選択中の院名をセット（複数院の場合はcurrentClinic、1院の場合はcurrentCorpName）
-  var addCl = document.getElementById('add-clinic');
-  if(addCl) addCl.value = currentClinic || currentCorpName || '';
+  var clinics = mData.clinic && mData.clinic.length > 0
+    ? mData.clinic.map(function(c){ return c.name; })
+    : [currentCorpName];
+
+  var wrap = document.getElementById('add-clinic-wrap');
+  var sel = document.getElementById('add-clinic');
+  var single = document.getElementById('add-clinic-single');
+
+  if(clinics.length > 1) {
+    // 複数院：selectを表示
+    if(wrap) wrap.style.display = '';
+    if(sel) {
+      sel.innerHTML = clinics.map(function(n){
+        var selected = (n === (currentClinic || currentCorpName)) ? ' selected' : '';
+        return '<option value="'+n+'"'+selected+'>'+n+'</option>';
+      }).join('');
+    }
+    if(single) single.value = '';
+  } else {
+    // 1院：hidden inputに値をセット
+    if(wrap) wrap.style.display = 'none';
+    if(single) single.value = clinics[0] || currentCorpName;
+    if(sel) sel.innerHTML = '<option value="'+(clinics[0]||currentCorpName)+'">'+(clinics[0]||currentCorpName)+'</option>';
+  }
   openM('modal-add');
 }
 function openM(id){ document.getElementById(id).classList.add('open'); }
