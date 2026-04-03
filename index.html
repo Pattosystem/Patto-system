@@ -1696,17 +1696,48 @@ function submitDelivery() {
   if(item) {
     const idx = invData.indexOf(item);
     if(idx >= 0) {
-      invData[idx].qty = Math.max(0, item.qty - totalInner);
-      if(item.units_per_outer && item.units_per_outer > 1 && dlvUnit === 'outer') {
-        invData[idx].outer_quantity = Math.max(0, (item.outer_quantity||0) - qty);
+      // qty を減算
+      const newQty = Math.max(0, item.qty - totalInner);
+      invData[idx].qty = newQty;
+
+      // outer_quantity / inner_quantity も再計算して同期
+      if(item.units_per_outer && item.units_per_outer > 1) {
+        if(dlvUnit === 'outer') {
+          invData[idx].outer_quantity = Math.max(0, (item.outer_quantity||0) - qty);
+          invData[idx].inner_quantity = item.inner_quantity||0;
+        } else {
+          // バラ単位：qtyベースでouter/innerを再計算
+          const newOuter = Math.floor(newQty / item.units_per_outer);
+          const newInner = newQty % item.units_per_outer;
+          invData[idx].outer_quantity = newOuter;
+          invData[idx].inner_quantity = newInner;
+        }
       }
+
       _skipRealtimeUntil = Date.now() + 3000;
       const staffName = document.getElementById('dlv-staff').value || document.getElementById('uname').textContent;
       const memo = document.getElementById('dlv-memo').value;
-      db.from('inventory').update({ quantity: invData[idx].qty, outer_quantity: invData[idx].outer_quantity, updated_at: new Date().toISOString() }).eq('id', item.id);
-      db.from('stock_history').insert({ inventory_id: item.id, product_name: item.name, action_type: 'out', quantity: totalInner, clinic: item.clinic, staff_name: staffName, memo: labels[dlvPurpose] + (memo?' '+memo:'') });
+
+      db.from('inventory').update({
+        quantity: newQty,
+        outer_quantity: invData[idx].outer_quantity,
+        inner_quantity: invData[idx].inner_quantity,
+        updated_at: new Date().toISOString()
+      }).eq('id', item.id);
+
+      db.from('stock_history').insert({
+        inventory_id: item.id,
+        product_name: item.name,
+        action_type: 'out',
+        quantity: totalInner,
+        clinic: item.clinic,
+        staff_name: staffName,
+        memo: labels[dlvPurpose] + (memo?' '+memo:'')
+      });
+
+      // 画面を即時更新（条件なし）
       refreshKPI();
-      if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all');
+      renderInv('all');
     }
   }
 }
