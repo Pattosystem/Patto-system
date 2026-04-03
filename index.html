@@ -797,7 +797,13 @@ tr:hover td{background:#FAFCFF}
   </div>
   <div id="sopt-panel1">
     <div class="card" style="margin-bottom:14px">
-      <div class="ch"><div class="ch-title">📋 商品別 適正在庫設定</div><span style="font-size:12px;color:var(--ink3)">発注点・発注量・上限在庫を設定します</span></div>
+      <div class="ch">
+        <div class="ch-title">📋 商品別 適正在庫設定</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="sopt-save-status" style="font-size:12px;color:var(--ink3);display:none"></span>
+          <button onclick="saveSoptToDB()" style="background:var(--sky);color:#fff;border:none;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">💾 設定を保存する</button>
+        </div>
+      </div>
       <div class="tbl-wrap">
         <table>
           <thead><tr><th>商品名</th><th>カテゴリ</th><th style="text-align:center">現在庫</th><th style="text-align:center">最小在庫</th><th style="text-align:center">上限在庫</th><th style="text-align:center">発注量</th><th style="text-align:center">リードタイム</th><th>状態</th></tr></thead>
@@ -2093,6 +2099,57 @@ function soptTab(n){
   document.getElementById('sopt-panel2').style.display=n===2?'':'none';
   if(n===2)renderSoptProposals();
 }
+// 適正在庫の変更フラグ管理
+function markSoptUnsaved() {
+  var el = document.getElementById('sopt-save-status');
+  if(el) {
+    el.style.display = 'inline';
+    el.textContent = '⚠️ 未保存の変更があります';
+    el.style.color = 'var(--amber)';
+    el.style.fontWeight = '700';
+  }
+}
+
+// 適正在庫をSupabaseに保存
+async function saveSoptToDB() {
+  var data = getStockOptData();
+  if(!data || data.length === 0) { toast('⚠️','保存するデータがありません'); return; }
+
+  var btn = document.querySelector('[onclick="saveSoptToDB()"]');
+  if(btn) { btn.textContent = '保存中...'; btn.disabled = true; }
+
+  var errors = 0;
+  for(var i = 0; i < data.length; i++) {
+    var item = data[i];
+    if(!item.id) continue;
+    var r = await db.from('inventory').update({
+      min_quantity: item.min,
+      max_quantity: item.max
+    }).eq('id', item.id);
+    if(r.error) { console.error(r.error); errors++; }
+  }
+
+  if(btn) { btn.textContent = '💾 設定を保存する'; btn.disabled = false; }
+
+  var statusEl = document.getElementById('sopt-save-status');
+  if(errors === 0) {
+    if(statusEl) {
+      statusEl.style.display = 'inline';
+      statusEl.textContent = '✅ 保存しました（' + new Date().toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'}) + '）';
+      statusEl.style.color = 'var(--green)';
+      statusEl.style.fontWeight = '600';
+    }
+    toast('✅', '適正在庫設定を保存しました');
+    // invDataも更新
+    data.forEach(function(item) {
+      var inv = invData.find(function(i){ return i.id === item.id; });
+      if(inv) { inv.min = item.min; inv.max = item.max; }
+    });
+  } else {
+    toast('❌', errors + '件の保存に失敗しました');
+  }
+}
+
 function renderSoptTable(){
   const tbody=document.getElementById('sopt-body');if(!tbody)return;
   const data=getStockOptData();
@@ -2100,7 +2157,7 @@ function renderSoptTable(){
     const sc=item.currentQty<=item.min?'var(--red)':item.currentQty>=item.max?'var(--amber)':'var(--green)';
     const sb=item.currentQty<=item.min?'var(--redp)':item.currentQty>=item.max?'var(--amberp)':'var(--greenp)';
     const sl=item.currentQty<=item.min?'要補充':item.currentQty>=item.max?'過剰':'正常';
-    return '<tr id="sopt-row-'+i+'"><td style="font-weight:700">'+item.name+'</td><td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td><td style="text-align:center;font-weight:800;color:'+sc+'">'+item.currentQty+'</td><td style="text-align:center"><input type="number" value="'+item.min+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].min=+this.value"></td><td style="text-align:center"><input type="number" value="'+item.max+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].max=+this.value"></td><td style="text-align:center"><input type="number" value="'+item.orderQty+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit"></td><td style="text-align:center"><input type="number" value="'+item.leadDays+'" min="0" style="width:50px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit"></td><td><span style="font-size:11px;background:'+sb+';color:'+sc+';padding:2px 8px;border-radius:10px;font-weight:700">'+sl+'</span></td></tr>';
+    return '<tr id="sopt-row-'+i+'"><td style="font-weight:700">'+item.name+'</td><td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td><td style="text-align:center;font-weight:800;color:'+sc+'">'+item.currentQty+'</td><td style="text-align:center"><input type="number" value="'+item.min+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].min=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.max+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].max=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.orderQty+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].orderQty=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.leadDays+'" min="0" style="width:50px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].leadDays=+this.value;markSoptUnsaved()"></td><td><span style="font-size:11px;background:'+sb+';color:'+sc+';padding:2px 8px;border-radius:10px;font-weight:700">'+sl+'</span></td></tr>';
   }).join('');
 }
 function renderSoptProposals(){
