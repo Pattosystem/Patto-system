@@ -2669,10 +2669,11 @@ function toast(icon, msg){ const el=document.createElement('div'); el.className=
       currentCorpId = parseInt(savedId);
       currentCorpName = savedName;
       document.getElementById('login-screen').style.display = 'none';
-      // 保存済みの院があれば復元
+      // 保存済みの院があれば復元、なければcurrentCorpNameを使用
       const savedClinic = localStorage.getItem('ps_clinic');
-      if(savedClinic) currentClinic = savedClinic;
-      showClinicSelectOrApp();
+      currentClinic = savedClinic || savedName;
+      // 再アクセス時は院選択をスキップして直接アプリ起動
+      launchApp();
     }
   } catch(e) {}
 })();
