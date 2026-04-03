@@ -1859,8 +1859,10 @@ function addOrder(name, clinic, supplier, qty) {
   const exists = ordersData.pending.find(function(o){ return o.name===name && o.clinic===clinic; });
   if(exists){ toast('ℹ️','「'+name+'」はすでに発注待ちに登録されています'); return; }
   // qty が数値なら「〇個（推奨）」と表示
-  var qtyStr = (typeof qty === 'number' && qty > 0) ? qty + '個（推奨）' : (qty || '要確認');
-  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyStr, time: nowStr() });
+  // qty が数値なら数値のまま保存（inputのvalueとして使うため）
+  var qtyVal = (typeof qty === 'number' && qty > 0) ? qty : 0;
+  var qtyDisplay = qtyVal > 0 ? String(qtyVal) : '';
+  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyDisplay, qtyNote: qtyVal > 0 ? '（推奨'+ qtyVal +'個）': '', time: nowStr() });
   renderOrders();
   toast('🛒','「'+name+'」を発注待ちに登録しました');
 }
@@ -1897,7 +1899,31 @@ function renderOrders() {
   if(dc) dc.textContent = ordersData.done.length+'件';
   pb.innerHTML = ordersData.pending.length === 0
     ? '<tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr>'
-    : ordersData.pending.map(function(o,i){ return '<tr><td style="font-weight:700">'+o.name+'</td><td>'+o.clinic+'</td><td style="text-align:center;font-weight:700">'+o.qty+'</td><td style="color:var(--ink3)">'+o.supplier+'</td><td style="color:var(--ink3);font-size:11.5px">'+o.time+'</td><td><div style="display:flex;gap:5px"><button class="btn-primary" style="font-size:11px;padding:4px 10px;border-radius:7px" onclick="confirmOrder('+i+')">✓ 確定</button><button style="background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="cancelOrder('+i+')">✕</button></div></td></tr>'; }).join('');
+    : ordersData.pending.map(function(o,i){
+        var qtyVal = String(o.qty).replace(/[^0-9]/g, '') || '';
+        return '<tr>'
+          + '<td style="font-weight:700">'+o.name+'</td>'
+          + '<td>'+o.clinic+'</td>'
+          + '<td style="text-align:center">'
+          + '<div style="display:flex;align-items:center;gap:4px;justify-content:center;flex-direction:column">'
+          + (o.qtyNote ? '<div style="font-size:10px;color:var(--amber);font-weight:600">'+o.qtyNote+'</div>' : '')
+          + '<div style="display:flex;align-items:center;gap:4px">'
+          + '<input type="number" min="1" value="'+qtyVal+'" placeholder="数量入力" '
+          + 'style="width:70px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;font-family:inherit" '
+          + 'onchange="ordersData.pending['+i+'].qty=this.value" '
+          + 'oninput="ordersData.pending['+i+'].qty=this.value">'
+          + '<span style="font-size:11px;color:var(--ink3)">個</span>'
+          + '</div>'
+          + '</div>'
+          + '</td>'
+          + '<td style="color:var(--ink3)">'+o.supplier+'</td>'
+          + '<td style="color:var(--ink3);font-size:11.5px">'+o.time+'</td>'
+          + '<td><div style="display:flex;gap:5px">'
+          + '<button class="btn-primary" style="font-size:11px;padding:4px 10px;border-radius:7px" onclick="confirmOrder('+i+')">✓ 確定</button>'
+          + '<button style="background:var(--redp);color:var(--red);border:1.5px solid #F0A0B0;border-radius:7px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="cancelOrder('+i+')">✕</button>'
+          + '</div></td>'
+          + '</tr>';
+      }).join('');
   if(db2) db2.innerHTML = ordersData.done.map(function(o){ return '<tr><td style="color:var(--ink3);font-size:11.5px">'+o.time+'</td><td style="font-weight:700">'+o.name+'</td><td>'+o.clinic+'</td><td style="text-align:center">'+o.qty+'</td><td><span class="chip '+(o.status==='入荷済み'?'ok':'warn')+'">'+o.status+'</span></td></tr>'; }).join('');
 }
 
