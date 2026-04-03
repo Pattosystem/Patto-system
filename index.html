@@ -1449,7 +1449,7 @@ function renderInv(filter) {
   let data = filter === 'low' ? invData.filter(function(i){ return i.qty <= i.min; })
            : filter === 'all' ? invData
            : invData.filter(function(i){ return i.cat === filter; });
-  if(clinic !== 'all') data = data.filter(function(i){ return i.clinic === CLINICS[+clinic]; });
+  if(clinic !== 'all') data = data.filter(function(i){ return i.clinic === getClinicName(clinic); });
   const today = new Date();
   const tbody = document.getElementById('inv-body');
   if(!tbody) return;
@@ -2519,7 +2519,7 @@ function openUserModal() {
 }
 
 function setUser(name, initial){ document.getElementById('uname').textContent=name; document.getElementById('uav').textContent=initial; closeM('modal-user'); toast('👤',name+'として操作中'); }
-function onClinic(){ const v=document.getElementById('csel').value; toast('🏥',(v==='all'?'全院統合':CLINICS[v])+'の在庫を表示中'); if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all'); }
+function onClinic(){ const v=document.getElementById('csel').value; toast('🏥',(v==='all'?'全院統合':getClinicName(v))+'の在庫を表示中'); if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all'); }
 function toast(icon, msg){ const el=document.createElement('div'); el.className='toast'; el.innerHTML='<span>'+icon+'</span><span>'+msg+'</span>'; document.getElementById('toasts').appendChild(el); setTimeout(function(){ el.remove(); }, 3000); }
 
 // ══════════════════════════════
