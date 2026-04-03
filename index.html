@@ -468,11 +468,9 @@ tr:hover td{background:#FAFCFF}
 <div id="pg-inventory" class="page">
   <div class="ph"><div><div class="ph-title">📦 在庫一覧</div><div class="ph-sub">全3院の在庫をリアルタイム管理</div></div><button class="btn-primary" onclick="openAddModal()">＋ 入荷登録</button></div>
   <div class="card">
-    <div class="fbar">
+    <div class="fbar" id="inv-cat-bar">
       <button class="fb active" onclick="filterInv(this,'all')">すべて</button>
-      <button class="fb" onclick="filterInv(this,'injection')">💉 注射・点滴</button>
-      <button class="fb" onclick="filterInv(this,'skincare')">🧴 スキンケア</button>
-      <button class="fb" onclick="filterInv(this,'supply')">📋 消耗品</button>
+      <!-- カテゴリタブは動的に追加 -->
       <div style="display:flex;align-items:center;gap:6px;background:var(--surf);border:1.5px solid #D8E6F5;border-radius:20px;padding:5px 12px;margin-left:8px">
         <span style="color:#557799;font-size:12px">🔍</span>
         <input id="inv-search" type="text" placeholder="製品名・ロット番号..." style="border:none;outline:none;background:none;font-size:12px;color:var(--ink);font-family:inherit;width:160px" oninput="filterInvSearch(this.value)">
@@ -1232,6 +1230,7 @@ async function loadInventoryFromDB() {
     refreshKPI();
     // 在庫ページが開いていれば更新
     if(document.getElementById('pg-inventory').classList.contains('active')) {
+      renderCatTabs();
       renderInv('all');
     }
     // クリニック選択肢も再更新（非同期読み込み後の確実な反映）
@@ -1462,6 +1461,35 @@ function fmtQty(item) {
     return outerQ + outerU + '(' + total + innerU + ')';
   }
   return item.qty + '個';
+}
+
+function renderCatTabs() {
+  var bar = document.getElementById('inv-cat-bar');
+  if(!bar) return;
+
+  // 既存のカテゴリボタンを削除（「すべて」「検索」「要補充」以外）
+  var btns = bar.querySelectorAll('.fb-cat');
+  btns.forEach(function(b){ b.remove(); });
+
+  // invDataにある実際のカテゴリを収集
+  var usedCats = [...new Set(invData.map(function(i){ return i.cat; }).filter(Boolean))];
+
+  // mData.catに登録されたカテゴリ名と照合
+  var catLabels = {};
+  mData.cat.forEach(function(c){ catLabels[c.id+''] = (c.icon||'📦') + ' ' + c.name; });
+  // デフォルトカテゴリ
+  var defaultCats = {injection:'💉 注射・点滴', skincare:'🧴 スキンケア', supply:'📋 消耗品', device:'🔧 機器・器具'};
+
+  // 「すべて」ボタンの後に挿入
+  var allBtn = bar.querySelector('.fb.active, .fb');
+  usedCats.forEach(function(cat) {
+    var label = catLabels[cat] || defaultCats[cat] || ('📦 ' + cat);
+    var btn = document.createElement('button');
+    btn.className = 'fb fb-cat';
+    btn.textContent = label;
+    btn.onclick = function(){ filterInv(this, cat); };
+    bar.insertBefore(btn, bar.children[1]);
+  });
 }
 
 function renderInv(filter) {
@@ -2505,7 +2533,7 @@ function go(name, el) {
     if((n.getAttribute('onclick')||'').includes("'"+name+"'")) n.classList.add('active');
   });
   window.scrollTo(0, 0);
-  if(name === 'inventory') renderInv('all');
+  if(name === 'inventory') { renderCatTabs(); renderInv('all'); }
   if(name === 'history') renderHist('all');
   if(name === 'expiry') renderExpiryPage();
   if(name === 'transfer') { renderTrHist(); updateTransferSelects(); }
