@@ -1426,10 +1426,11 @@ function renderExpiry() {
 // ══════════════════════════════
 function fmtQty(item) {
   if(item.units_per_outer && item.units_per_outer > 1) {
-    const outerQ = item.outer_quantity || 0;
-    const innerQ = item.inner_quantity || 0;
-    const total = outerQ * item.units_per_outer + innerQ;
-    return total + (item.inner_unit||'個');
+    const total = item.qty; // バイアル合計
+    const outerQ = Math.ceil(total / item.units_per_outer); // 箱数 = ceil(バイアル数 ÷ 1箱あたり)
+    const outerU = item.outer_unit || '箱';
+    const innerU = item.inner_unit || '個';
+    return outerQ + outerU + '(' + total + innerU + ')';
   }
   return item.qty + '個';
 }
@@ -1784,10 +1785,32 @@ function submitAdd() {
     expiry_date: expiry || null, lot_number: document.getElementById('add-lot').value.trim(),
     corporation_id: currentCorpId
   };
-  db.from('inventory').insert(newRow).then(function(r) {
+  db.from('inventory').insert(newRow).select().then(function(r) {
     if(r.error){ console.error(r.error); toast('❌','登録に失敗しました'); return; }
-    loadInventoryFromDB();
-    db.from('stock_history').insert({ product_name: name, action_type: 'in', quantity: totalQty, clinic: newRow.clinic, staff_name: document.getElementById('uname').textContent, memo: '入荷登録' });
+    // DBから返ってきたidを使って直接invDataに追加（loadInventoryFromDB不使用で既存データを守る）
+    const inserted = r.data && r.data[0];
+    const localItem = {
+      id: inserted ? inserted.id : Date.now(),
+      name: name,
+      cat: newRow.category,
+      clinic: newRow.clinic,
+      qty: totalQty,
+      min: newRow.min_quantity,
+      max: newRow.min_quantity * 4,
+      expiry: newRow.expiry_date || '',
+      lot: newRow.lot_number || '',
+      price: newRow.unit_price || 0,
+      outer_unit: outerUnit,
+      inner_unit: innerUnit,
+      units_per_outer: unitsPerOuter,
+      outer_quantity: outerQty,
+      inner_quantity: innerQty
+    };
+    invData.unshift(localItem);
+    renderInv('all');
+    refreshKPI();
+    updateClinicSelects();
+    db.from('stock_history').insert({ inventory_id: localItem.id, product_name: name, action_type: 'in', quantity: totalQty, clinic: newRow.clinic, staff_name: document.getElementById('uname').textContent, memo: '入荷登録' });
   });
   ['add-name','add-price','add-min','add-expiry','add-lot','add-supplier'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('add-outer-qty').value = '0';
