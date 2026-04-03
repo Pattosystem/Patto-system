@@ -1799,8 +1799,9 @@ async function submitDelivery() {
         quantity: totalInner,
         clinic: item.clinic,
         staff_name: staffName,
-        memo: labels[dlvPurpose] + (memo?' '+memo:'')
-      }).then(function(r){ if(r.error) console.error('history insert error:', r.error); else console.log('history ok, inv_id=', item.id, 'qty=', totalInner); });
+        memo: labels[dlvPurpose] + (memo?' '+memo:''),
+        corporation_id: currentCorpId
+      }).then(function(r){ if(r.error) console.error('history insert error:', r.error); });
 
       // 画面を即時更新
       refreshKPI();
@@ -1876,7 +1877,7 @@ function submitAdd() {
     renderInv('all');
     refreshKPI();
     updateClinicSelects();
-    db.from('stock_history').insert({ inventory_id: localItem.id, product_name: name, action_type: 'in', quantity: totalQty, clinic: newRow.clinic, staff_name: document.getElementById('uname').textContent, memo: '入荷登録' });
+    db.from('stock_history').insert({ inventory_id: localItem.id, product_name: name, action_type: 'in', quantity: totalQty, clinic: newRow.clinic, staff_name: document.getElementById('uname').textContent, memo: '入荷登録', corporation_id: currentCorpId });
   });
   ['add-name','add-price','add-min','add-expiry','add-lot','add-supplier'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('add-outer-qty').value = '0';
@@ -1925,7 +1926,8 @@ function confirmOrder(idx) {
     quantity: item.qty || 0,
     clinic: item.clinic,
     staff_name: document.getElementById('uname').textContent,
-    memo: '発注確定 サプライヤー:' + (item.supplier || '—')
+    memo: '発注確定 サプライヤー:' + (item.supplier || '—'),
+    corporation_id: currentCorpId
   });
   toast('✅', '「'+item.name+'」を発注確定しました');
 }
@@ -2066,7 +2068,7 @@ async function submitTransfer() {
 
   // 履歴に記録
   const staffName = document.getElementById('uname').textContent;
-  db.from('stock_history').insert({ inventory_id: fromItem.id, product_name: p, action_type: 'transfer', quantity: q, clinic: fromName, staff_name: staffName, memo: fromName+'→'+toName });
+  db.from('stock_history').insert({ inventory_id: fromItem.id, product_name: p, action_type: 'transfer', quantity: q, clinic: fromName, staff_name: staffName, memo: fromName+'→'+toName, corporation_id: currentCorpId });
 
   trHist.unshift({ time:'たった今', prod:p, route:fromName+'→'+toName, qty:q, user:staffName });
   renderTrHist();
