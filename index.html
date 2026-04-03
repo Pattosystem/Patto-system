@@ -1746,7 +1746,7 @@ function submitDelivery() {
         clinic: item.clinic,
         staff_name: staffName,
         memo: labels[dlvPurpose] + (memo?' '+memo:'')
-      });
+      }).then(function(r){ if(r.error) console.error('history insert error:', r.error); else console.log('history inserted ok, inventory_id=', item.id, 'clinic=', item.clinic); });
 
       // 画面を即時更新（条件なし）
       refreshKPI();
