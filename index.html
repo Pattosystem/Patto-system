@@ -562,26 +562,8 @@ tr:hover td{background:#FAFCFF}
 <!-- 月次レポート -->
 <div id="pg-report" class="page">
   <div class="ph"><div><div class="ph-title">📊 月次レポート</div><div class="ph-sub" id="report-sub">読み込み中...</div></div><button class="btn-outline" onclick="toast('📄','PDFを生成中...')">📄 PDFで出力</button></div>
-  <div class="four" style="margin-bottom:14px">
-    <div class="sc"><div class="sc-icon">💴</div><div class="sc-label">使用コスト（全院）</div><div class="sc-num" style="font-size:26px">¥284K</div><div class="sc-note">前月比 −12%</div></div>
-    <div class="sc g"><div class="sc-icon">📋</div><div class="sc-label">使用件数（全院）</div><div class="sc-num">312</div><div class="sc-note">前月比 +8%</div></div>
-    <div class="sc r"><div class="sc-icon">🗑️</div><div class="sc-label">廃棄コスト</div><div class="sc-num" style="font-size:26px">¥24K</div><div class="sc-note">期限切れ 2件</div></div>
-    <div class="sc a"><div class="sc-icon">🔀</div><div class="sc-label">院間移送件数</div><div class="sc-num">7</div><div class="sc-note">前月比 +2件</div></div>
-  </div>
-  <div class="two">
-    <div class="card"><div class="ch"><div class="ch-title">🏥 院別コスト内訳</div></div><div class="cb">
-      <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>銀座本院</span><span style="color:var(--skyd)">¥142K (50%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:50%;background:var(--sky);border-radius:4px"></div></div></div>
-      <div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>渋谷分院</span><span style="color:var(--skyd)">¥85K (30%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:30%;background:var(--sky);border-radius:4px;opacity:.65"></div></div></div>
-      <div><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>新宿分院</span><span style="color:var(--skyd)">¥57K (20%)</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:20%;background:var(--sky);border-radius:4px;opacity:.4"></div></div></div>
-    </div></div>
-    <div class="card"><div class="ch"><div class="ch-title">📉 ロス・廃棄分析</div></div>
-      <div class="tbl-wrap"><table><thead><tr><th>月</th><th>院</th><th style="text-align:right">廃棄コスト</th><th>理由</th></tr></thead><tbody>
-        <tr><td>3月</td><td>銀座本院</td><td style="text-align:right;color:var(--red);font-weight:700">¥24,000</td><td>期限切れ</td></tr>
-        <tr><td>2月</td><td>渋谷分院</td><td style="text-align:right;color:var(--red);font-weight:700">¥8,000</td><td>保管ミス</td></tr>
-        <tr><td>1月</td><td>新宿分院</td><td style="text-align:right;color:var(--red);font-weight:700">¥45,000</td><td>期限切れ</td></tr>
-      </tbody></table></div>
-    </div>
-  </div>
+  <div id="report-kpi-row" class="four" style="margin-bottom:14px"></div>
+  <div id="report-detail-row" class="two"></div>
 </div>
 
 <!-- マスター管理 -->
@@ -1163,20 +1145,11 @@ const catLabel = {injection:'💉 注射・点滴', skincare:'🧴 スキンケ�
 // invData: Supabaseから読み込む（初期は空）
 const invData = [];
 
-let trHist = [
-  {time:'本日 15:12', prod:'ボトックス 100U', route:'銀座→渋谷', qty:5, user:'田中 院長'},
-  {time:'昨日 17:40', prod:'注射針 30G', route:'銀座→新宿', qty:10, user:'田中 院長'},
-];
+let trHist = [];
 
-let ordersData = {
-  pending: [],
-  done: [],
-};
+let ordersData = { pending: [], done: [] };
 
-let campaignData = [
-  {id:1, name:'春のボトックスキャンペーン', start:'2026-03-01', end:'2026-03-15', products:['ボトックス 100U'], memo:'ボトックス20%オフ', normalUsage:{monthly:52}, campaignUsage:{total:38, days:15}},
-  {id:2, name:'ヒアルロン酸特別キャンペーン', start:'2026-02-10', end:'2026-02-20', products:['ジュビダーム ウルトラ4'], memo:'バレンタイン企画', normalUsage:{monthly:30}, campaignUsage:{total:28, days:10}}
-];
+let campaignData = [];
 let selectedCampaignId = null;
 
 let mData = {
@@ -1542,7 +1515,17 @@ async function renderHist(filter) {
   const el = document.getElementById('hist-list');
   if(!el) return;
   el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">読み込み中...</div>';
-  const { data, error } = await db.from('stock_history').select('*').order('created_at', {ascending:false}).limit(100);
+  // 自分のクリニックの在庫IDだけに絞る
+  const myInventoryIds = invData.map(function(i){ return i.id; }).filter(Boolean);
+  var query = db.from('stock_history').select('*').order('created_at', {ascending:false}).limit(200);
+  if(myInventoryIds.length > 0) {
+    query = query.in('inventory_id', myInventoryIds);
+  } else {
+    // 在庫がまだない場合は空表示
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">履歴がありません</div>';
+    return;
+  }
+  const { data, error } = await query;
   if(error){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red)">読み込みエラー</div>'; return; }
   let filtered = data || [];
   if(filter === 'use') filtered = filtered.filter(function(h){ return h.action_type === 'out'; });
@@ -2208,6 +2191,70 @@ function renderSoptProposals(){
 // ══════════════════════════════
 // キャンペーン
 // ══════════════════════════════
+// 月次レポートを動的生成
+async function renderReport() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const reportSub = document.getElementById('report-sub');
+  if(reportSub) reportSub.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月 ｜ ' + currentCorpName;
+
+  const myInventoryIds = invData.map(function(i){ return i.id; }).filter(Boolean);
+  var histThisMonth = [];
+  if(myInventoryIds.length > 0) {
+    const r = await db.from('stock_history').select('*')
+      .in('inventory_id', myInventoryIds)
+      .gte('created_at', monthStart.toISOString());
+    histThisMonth = r.data || [];
+  }
+
+  // KPI計算
+  const outRecords = histThisMonth.filter(function(h){ return h.action_type==='out'; });
+  const totalOut = outRecords.reduce(function(s,h){ return s+(h.quantity||0); }, 0);
+  const totalCost = outRecords.reduce(function(s,h){
+    const inv = invData.find(function(i){ return i.id===h.inventory_id; });
+    return s + (h.quantity||0) * (inv?inv.price||0:0);
+  }, 0);
+  const transferCount = trHist.length;
+
+  const kpiRow = document.getElementById('report-kpi-row');
+  if(kpiRow) kpiRow.innerHTML =
+    '<div class="sc"><div class="sc-icon">💴</div><div class="sc-label">使用コスト（今月）</div><div class="sc-num" style="font-size:26px">¥' + (totalCost >= 1000 ? Math.round(totalCost/1000)+'K' : totalCost) + '</div><div class="sc-note">出庫コスト合計</div></div>'
+    + '<div class="sc g"><div class="sc-icon">📋</div><div class="sc-label">出庫件数（今月）</div><div class="sc-num">' + totalOut + '</div><div class="sc-note">今月の合計出庫数</div></div>'
+    + '<div class="sc r"><div class="sc-icon">🗑️</div><div class="sc-label">登録品目数</div><div class="sc-num">' + invData.length + '</div><div class="sc-note">現在の在庫品目</div></div>'
+    + '<div class="sc a"><div class="sc-icon">🔀</div><div class="sc-label">院間移送件数</div><div class="sc-num">' + transferCount + '</div><div class="sc-note">今月の移送記録</div></div>';
+
+  // 商品別出庫ランキング
+  var prodMap = {};
+  outRecords.forEach(function(h) {
+    if(!prodMap[h.product_name]) prodMap[h.product_name] = 0;
+    prodMap[h.product_name] += h.quantity || 0;
+  });
+  var ranking = Object.entries(prodMap).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+
+  const detailRow = document.getElementById('report-detail-row');
+  if(detailRow) detailRow.innerHTML =
+    '<div class="card"><div class="ch"><div class="ch-title">📊 商品別出庫ランキング（今月）</div></div><div class="cb">'
+    + (ranking.length === 0
+      ? '<div style="text-align:center;color:var(--ink3);padding:20px">今月の出庫データがありません</div>'
+      : ranking.map(function(r, i) {
+          var pct = ranking[0][1] > 0 ? Math.round(r[1]/ranking[0][1]*100) : 0;
+          return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:5px"><span>' + (i+1) + '. ' + r[0] + '</span><span style="color:var(--skyd)">' + r[1] + '個</span></div><div style="height:8px;background:#D8E6F5;border-radius:4px;overflow:hidden"><div style="height:100%;width:' + pct + '%;background:var(--sky);border-radius:4px"></div></div></div>';
+        }).join('')
+    )
+    + '</div></div>'
+    + '<div class="card"><div class="ch"><div class="ch-title">📋 操作履歴サマリー（今月）</div></div>'
+    + '<div class="tbl-wrap"><table><thead><tr><th>商品名</th><th>操作者</th><th style="text-align:center">出庫数</th><th>最終操作</th></tr></thead><tbody>'
+    + (outRecords.length === 0
+      ? '<tr><td colspan="4" style="text-align:center;color:var(--ink3);padding:20px">データがありません</td></tr>'
+      : outRecords.slice(0,10).map(function(h) {
+          const d = new Date(h.created_at);
+          const ds = (d.getMonth()+1)+'/'+ d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');
+          return '<tr><td style="font-weight:700">'+h.product_name+'</td><td>'+( h.staff_name||'—')+'</td><td style="text-align:center;font-weight:700">'+h.quantity+'</td><td style="color:var(--ink3);font-size:11.5px">'+ds+'</td></tr>';
+        }).join('')
+    )
+    + '</tbody></table></div></div>';
+}
+
 function renderCampaignList(){
   const el=document.getElementById('campaign-list');if(!el)return;
   if(!campaignData.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--ink3)">キャンペーンが登録されていません</div>';return;}
@@ -2260,6 +2307,7 @@ function go(name, el) {
   if(name === 'master') { mRenderAll(); fillStaffClinic(); }
   if(name === 'import') impReset();
   if(name === 'orders') renderOrders();
+  if(name === 'report') renderReport();
   if(name === 'stockopt') { stockOptData=null; renderSoptTable(); }
   if(name === 'campaign') renderCampaignList();
 }
