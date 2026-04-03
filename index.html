@@ -1136,7 +1136,13 @@ function doLogout() {
 // ══════════════════════════════
 // グローバルデータ
 // ══════════════════════════════
-const CLINICS = {1:'銀座本院', 2:'渋谷分院', 3:'新宿分院'};
+const CLINICS = {1:'銀座本院', 2:'渋谷分院', 3:'新宿分院'}; // 後方互換性のため残す
+// 動的クリニック名取得（インデックス番号から）
+function getClinicName(idx) {
+  var i = parseInt(idx) - 1;
+  if(mData.clinic && mData.clinic[i]) return mData.clinic[i].name;
+  return CLINICS[+idx] || '不明';
+}
 let nid = 200;
 let currentMode = 'multi';
 
@@ -1870,16 +1876,12 @@ function addOrder(name, clinic, supplier, qty) {
 function confirmOrder(idx) {
   const item = ordersData.pending[idx];
   if(!item) return;
-  const adminEmail = (document.getElementById('admin-email')?.value || '').trim();
-  const subject = encodeURIComponent('【発注連絡】'+item.name+'（'+item.clinic+'）');
-  const body = encodeURIComponent('製品名：'+item.name+'\nクリニック：'+item.clinic+'\n推奨数量：'+item.qty+'\nサプライヤー：'+item.supplier);
-  window.location.href = 'mailto:' + adminEmail + '?subject=' + subject + '&body=' + body;
   item.status = '入荷待ち';
   item.time = nowStr();
   ordersData.done.unshift(item);
   ordersData.pending.splice(idx, 1);
   renderOrders();
-  toast('📧','メーラーを開きました');
+  toast('✅', '「'+item.name+'」を発注確定しました');
 }
 
 function cancelOrder(idx) {
@@ -1969,35 +1971,99 @@ function renderTrHist() {
   tbody.innerHTML = trHist.map(function(t){ return '<tr><td style="color:var(--ink3)">'+t.time+'</td><td style="font-weight:700">'+t.prod+'</td><td style="color:var(--skyd);font-weight:600">'+t.route+'</td><td style="text-align:center;font-weight:800">'+t.qty+'</td><td style="color:var(--ink3)">'+t.user+'</td></tr>'; }).join('');
 }
 
-function submitTransfer() {
+async function submitTransfer() {
   const p = document.getElementById('tr-prod').value;
   const q = parseInt(document.getElementById('tr-qty').value) || 0;
-  const f = document.getElementById('tr-from').value;
-  const t = document.getElementById('tr-to').value;
+  const fIdx = document.getElementById('tr-from').value;
+  const tIdx = document.getElementById('tr-to').value;
+  const fromName = getClinicName(fIdx);
+  const toName = getClinicName(tIdx);
   if(p === '選択してください'){ toast('⚠️','製品を選択してください'); return; }
   if(q <= 0){ toast('⚠️','数量を入力してください'); return; }
-  if(f === t){ toast('⚠️','移送元と移送先が同じです'); return; }
-  trHist.unshift({ time:'たった今', prod:p, route:CLINICS[+f]+'→'+CLINICS[+t], qty:q, user:document.getElementById('uname').textContent });
+  if(fIdx === tIdx){ toast('⚠️','移送元と移送先が同じです'); return; }
+
+  // 移送元の在庫を減らす
+  const fromItem = invData.find(function(i){ return i.name === p && i.clinic === fromName; });
+  if(!fromItem){ toast('⚠️','移送元の在庫が見つかりません'); return; }
+  if(fromItem.qty < q){ toast('⚠️','移送元の在庫が不足しています（在庫:'+fromItem.qty+'）'); return; }
+
+  _skipRealtimeUntil = Date.now() + 8000;
+
+  // 移送元を減らす
+  const newFromQty = fromItem.qty - q;
+  const fromIdx = invData.indexOf(fromItem);
+  invData[fromIdx].qty = newFromQty;
+  await db.from('inventory').update({ quantity: newFromQty, updated_at: new Date().toISOString() }).eq('id', fromItem.id);
+
+  // 移送先の在庫を増やす（同名商品があれば加算、なければ新規作成）
+  const toItem = invData.find(function(i){ return i.name === p && i.clinic === toName; });
+  if(toItem) {
+    const newToQty = toItem.qty + q;
+    const toIdx = invData.indexOf(toItem);
+    invData[toIdx].qty = newToQty;
+    await db.from('inventory').update({ quantity: newToQty, updated_at: new Date().toISOString() }).eq('id', toItem.id);
+  } else {
+    // 移送先に同名商品がない場合は新規作成
+    const newItem = Object.assign({}, fromItem, { id: null, clinic: toName, qty: q, outer_quantity: 0, inner_quantity: q, corporation_id: currentCorpId });
+    const r = await db.from('inventory').insert({
+      name: p, category: fromItem.cat, clinic: toName, quantity: q,
+      min_quantity: fromItem.min, unit_price: fromItem.price,
+      expiry_date: fromItem.expiry || null, lot_number: fromItem.lot || '',
+      outer_unit: fromItem.outer_unit, inner_unit: fromItem.inner_unit,
+      units_per_outer: fromItem.units_per_outer, corporation_id: currentCorpId
+    }).select();
+    if(r.data && r.data[0]) {
+      newItem.id = r.data[0].id;
+      invData.push(newItem);
+    }
+  }
+
+  // 履歴に記録
+  const staffName = document.getElementById('uname').textContent;
+  db.from('stock_history').insert({ inventory_id: fromItem.id, product_name: p, action_type: 'transfer', quantity: q, clinic: fromName, staff_name: staffName, memo: fromName+'→'+toName });
+
+  trHist.unshift({ time:'たった今', prod:p, route:fromName+'→'+toName, qty:q, user:staffName });
   renderTrHist();
+  refreshKPI();
+  renderInv('all');
   document.getElementById('tr-qty').value = '';
-  toast('🔀', p+' × '+q+'（'+CLINICS[+f]+' → '+CLINICS[+t]+'）');
+  toast('🔀', p+' × '+q+'（'+fromName+' → '+toName+'）');
 }
 
 function doQTransfer() {
+  // クイック移送はsubmitTransferの入力を設定してから呼ぶ
   const p = document.getElementById('q-prod').value;
-  const q = parseInt(document.getElementById('q-qty').value) || 0;
+  const q = document.getElementById('q-qty').value;
   const f = document.getElementById('q-from').value;
   const t = document.getElementById('q-to').value;
   if(p.includes('選択')){ toast('⚠️','製品を選択してください'); return; }
-  if(q <= 0){ toast('⚠️','数量を入力してください'); return; }
+  if(!q || parseInt(q) <= 0){ toast('⚠️','数量を入力してください'); return; }
   if(f === t){ toast('⚠️','移送元と移送先が同じです'); return; }
+  // tr-prodなどに値を設定してsubmitTransferを呼ぶ
+  const trProd = document.getElementById('tr-prod');
+  const trFrom = document.getElementById('tr-from');
+  const trTo = document.getElementById('tr-to');
+  const trQty = document.getElementById('tr-qty');
+  if(trProd) trProd.value = p;
+  if(trFrom) trFrom.value = f;
+  if(trTo) trTo.value = t;
+  if(trQty) trQty.value = q;
   document.getElementById('q-qty').value = '';
-  toast('🔀', p+' × '+q+'（'+CLINICS[+f]+' → '+CLINICS[+t]+'）');
+  submitTransfer();
 }
 
 // ══════════════════════════════
 // マスター管理
 // ══════════════════════════════
+// mDataをlocalStorageに保存
+function saveMDataToStorage() {
+  try {
+    localStorage.setItem('ps_clinics_' + currentCorpId, JSON.stringify(mData.clinic));
+    localStorage.setItem('ps_staff_' + currentCorpId, JSON.stringify(mData.staff));
+    localStorage.setItem('ps_supplier_' + currentCorpId, JSON.stringify(mData.supplier));
+  } catch(e) {}
+}
+
 function hex2rgb(hex){ const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return r+','+g+','+b; }
 function lighten(hex){ return 'rgba('+hex2rgb(hex)+',0.12)'; }
 function mTab(el,name){ document.querySelectorAll('.mtab').forEach(function(t){t.classList.remove('active');}); document.querySelectorAll('.mpanel').forEach(function(p){p.classList.remove('active');}); el.classList.add('active'); document.getElementById('mp-'+name).classList.add('active'); mRenderList(name); if(name==='staff')fillStaffClinic(); }
@@ -2043,9 +2109,9 @@ function mSave(type){
   if(type==='status') data={name,color:document.getElementById('f-status-color').value,cond:document.getElementById('f-status-cond').value,desc:document.getElementById('f-status-desc').value};
   if(eid){const i=mData[type].findIndex(function(x){return x.id===eid;});mData[type][i]=Object.assign({},mData[type][i],data);toast('✅','「'+name+'」を更新しました');}
   else{mData[type].push(Object.assign({id:++nid},data));toast('✅','「'+name+'」を追加しました');}
-  mReset(type);mRenderList(type);if(type==='clinic')updateClinicSelects();
+  mReset(type);mRenderList(type);if(type==='clinic')updateClinicSelects();saveMDataToStorage();
 }
-function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);if(type==='clinic')updateClinicSelects();toast('🗑️','「'+item.name+'」を削除しました'); }
+function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);if(type==='clinic')updateClinicSelects();saveMDataToStorage();toast('🗑️','「'+item.name+'」を削除しました'); }
 function mReset(type){
   document.getElementById('fid-'+type).value='';
   ['name','addr','tel','icon','desc','person','email','items'].forEach(function(f){const el=document.getElementById('f-'+type+'-'+f);if(el)el.value='';});
@@ -2484,10 +2550,21 @@ function initApp() {
   const reportSub = document.getElementById('report-sub');
   if(reportSub) reportSub.textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月';
 
-  // ★ ログインしたクリニックでマスターデータを初期化
-  mData.clinic = [{id:1, name:currentCorpName, addr:'', tel:'', type:'main', active:'1'}];
-  mData.staff = [];
-  mData.supplier = [];
+  // ★ マスターデータをlocalStorageから復元（なければ初期化）
+  var savedClinics = null;
+  try { savedClinics = JSON.parse(localStorage.getItem('ps_clinics_' + currentCorpId)); } catch(e){}
+  if(savedClinics && savedClinics.length > 0) {
+    mData.clinic = savedClinics;
+  } else {
+    mData.clinic = [{id:1, name:currentCorpName, addr:'', tel:'', type:'main', active:'1'}];
+    saveMDataToStorage();
+  }
+  var savedStaff = null;
+  try { savedStaff = JSON.parse(localStorage.getItem('ps_staff_' + currentCorpId)); } catch(e){}
+  mData.staff = savedStaff || [];
+  var savedSupplier = null;
+  try { savedSupplier = JSON.parse(localStorage.getItem('ps_supplier_' + currentCorpId)); } catch(e){}
+  mData.supplier = savedSupplier || [];
 
   // 設定画面のクリニック情報を反映
   const corpNameInput = document.getElementById('setting-corp-name');
