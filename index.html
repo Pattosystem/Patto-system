@@ -1544,8 +1544,10 @@ async function renderHist(filter) {
   });
   if(error){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red)">読み込みエラー</div>'; return; }
   let filtered = allData;
-  if(filter === 'use') filtered = filtered.filter(function(h){ return h.action_type === 'out'; });
-  if(filter === 'add') filtered = filtered.filter(function(h){ return h.action_type === 'in'; });
+  if(filter === 'use')      filtered = filtered.filter(function(h){ return h.action_type === 'out'; });
+  if(filter === 'add')      filtered = filtered.filter(function(h){ return h.action_type === 'in'; });
+  if(filter === 'transfer') filtered = filtered.filter(function(h){ return h.action_type === 'transfer'; });
+  if(filter === 'order')    filtered = filtered.filter(function(h){ return h.action_type === 'order'; });
   if(filtered.length === 0){ el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">履歴がありません</div>'; return; }
   el.innerHTML = filtered.map(function(h) {
     const d = new Date(h.created_at);
@@ -1856,7 +1858,9 @@ function nowStr() {
 function addOrder(name, clinic, supplier, qty) {
   const exists = ordersData.pending.find(function(o){ return o.name===name && o.clinic===clinic; });
   if(exists){ toast('ℹ️','「'+name+'」はすでに発注待ちに登録されています'); return; }
-  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qty||'要確認', time: nowStr() });
+  // qty が数値なら「〇個（推奨）」と表示
+  var qtyStr = (typeof qty === 'number' && qty > 0) ? qty + '個（推奨）' : (qty || '要確認');
+  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyStr, time: nowStr() });
   renderOrders();
   toast('🛒','「'+name+'」を発注待ちに登録しました');
 }
