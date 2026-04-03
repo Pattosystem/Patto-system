@@ -354,9 +354,9 @@ tr:hover td{background:#FAFCFF}
   </div>
   <div class="navlinks">
     <div class="nl active" onclick="go('dashboard',this)">ダッシュボード</div>
-    <div class="nl" onclick="go('inventory',this)">在庫一覧 <span class="nbadge" id="nav-low-badge">—</span></div>
+    <div class="nl" onclick="go('inventory',this)">在庫一覧 <span class="nbadge" id="nav-low-badge" style="display:none">0</span></div>
     <div class="nl multi-only" onclick="go('transfer',this)">院間移送</div>
-    <div class="nl" onclick="go('orders',this)">発注管理 <span class="nbadge">2</span></div>
+    <div class="nl" onclick="go('orders',this)">発注管理 <span class="nbadge" id="nav-orders-badge" style="display:none">0</span></div>
     <div class="nl" onclick="go('expiry',this)">期限管理</div>
     <div class="nl" onclick="go('report',this)">月次レポート</div>
     <div class="nl" onclick="go('stockopt',this)">適正在庫</div>
