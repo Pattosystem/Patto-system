@@ -1917,6 +1917,16 @@ function confirmOrder(idx) {
   ordersData.done.unshift(item);
   ordersData.pending.splice(idx, 1);
   renderOrders();
+  // stock_historyに発注記録を保存
+  db.from('stock_history').insert({
+    inventory_id: null,
+    product_name: item.name,
+    action_type: 'order',
+    quantity: item.qty || 0,
+    clinic: item.clinic,
+    staff_name: document.getElementById('uname').textContent,
+    memo: '発注確定 サプライヤー:' + (item.supplier || '—')
+  });
   toast('✅', '「'+item.name+'」を発注確定しました');
 }
 
