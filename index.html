@@ -926,6 +926,41 @@ tr:hover td{background:#FAFCFF}
   </div>
 </div>
 
+<!-- 在庫編集モーダル -->
+<div class="ov" id="modal-inv-edit">
+  <div class="modal" style="width:500px">
+    <div class="modal-title">✏️ 在庫情報を編集</div>
+    <input type="hidden" id="edit-inv-id">
+    <div style="background:var(--skyp);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--skyd);margin-bottom:14px">
+      編集中：<strong id="edit-inv-name" style="color:var(--ink)"></strong>
+    </div>
+    <div class="fg">
+      <div class="fg-g full"><label>製品名</label><input id="edit-name" type="text"></div>
+      <div class="fg-g"><label>カテゴリ</label>
+        <select id="edit-cat">
+          <option value="injection">注射・点滴薬剤</option>
+          <option value="skincare">スキンケア製品</option>
+          <option value="device">医療機器・器具</option>
+          <option value="supply">消耗品</option>
+        </select>
+      </div>
+      <div class="fg-g"><label>クリニック</label><select id="edit-clinic"></select></div>
+      <div class="fg-g"><label>現在庫数</label><input id="edit-qty" type="number" min="0"></div>
+      <div class="fg-g"><label>最小在庫数</label><input id="edit-min" type="number" min="0"></div>
+      <div class="fg-g"><label>有効期限</label><input id="edit-expiry" type="date"></div>
+      <div class="fg-g"><label>ロット番号</label><input id="edit-lot" type="text" placeholder="例: BT2025-001"></div>
+      <div class="fg-g"><label>単価（円）</label><input id="edit-price" type="number" min="0"></div>
+      <div class="fg-g"><label>外箱の単位</label><input id="edit-outer-unit" type="text" placeholder="例: 箱"></div>
+      <div class="fg-g"><label>中身の単位</label><input id="edit-inner-unit" type="text" placeholder="例: バイアル"></div>
+      <div class="fg-g"><label>1箱あたりの個数</label><input id="edit-units-per-outer" type="number" min="1"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn-mo-ghost" onclick="closeM('modal-inv-edit')">キャンセル</button>
+      <button class="btn-mo-primary" onclick="saveInvEdit()">保存する</button>
+    </div>
+  </div>
+</div>
+
 <div class="ov" id="modal-campaign-add">
   <div class="modal">
     <div class="modal-title">🎪 キャンペーン登録</div>
@@ -2487,6 +2522,87 @@ function go(name, el) {
 // ══════════════════════════════
 // ユーティリティ
 // ══════════════════════════════
+// 在庫編集
+function openInvEdit(idx) {
+  const item = invData[idx];
+  if(!item) return;
+  document.getElementById('edit-inv-id').value = idx;
+  document.getElementById('edit-inv-name').textContent = item.name;
+  document.getElementById('edit-name').value = item.name || '';
+  document.getElementById('edit-cat').value = item.cat || 'injection';
+  document.getElementById('edit-qty').value = item.qty || 0;
+  document.getElementById('edit-min').value = item.min || 0;
+  document.getElementById('edit-expiry').value = item.expiry || '';
+  document.getElementById('edit-lot').value = item.lot || '';
+  document.getElementById('edit-price').value = item.price || 0;
+  document.getElementById('edit-outer-unit').value = item.outer_unit || '箱';
+  document.getElementById('edit-inner-unit').value = item.inner_unit || '個';
+  document.getElementById('edit-units-per-outer').value = item.units_per_outer || 1;
+  // クリニック選択肢を設定
+  var clinics = mData.clinic.length > 0 ? mData.clinic.map(function(c){ return c.name; }) : [currentCorpName];
+  var editClinic = document.getElementById('edit-clinic');
+  editClinic.innerHTML = clinics.map(function(n){ return '<option value="'+n+'"'+(n===item.clinic?' selected':'')+'>'+n+'</option>'; }).join('');
+  openM('modal-inv-edit');
+}
+
+async function saveInvEdit() {
+  const idx = parseInt(document.getElementById('edit-inv-id').value);
+  const item = invData[idx];
+  if(!item) return;
+
+  const newQty = parseInt(document.getElementById('edit-qty').value) || 0;
+  const newMin = parseInt(document.getElementById('edit-min').value) || 0;
+  const newUnitsPerOuter = parseInt(document.getElementById('edit-units-per-outer').value) || 1;
+
+  // ローカルデータ更新
+  invData[idx].name = document.getElementById('edit-name').value.trim() || item.name;
+  invData[idx].cat = document.getElementById('edit-cat').value;
+  invData[idx].clinic = document.getElementById('edit-clinic').value;
+  invData[idx].qty = newQty;
+  invData[idx].min = newMin;
+  invData[idx].expiry = document.getElementById('edit-expiry').value || '';
+  invData[idx].lot = document.getElementById('edit-lot').value.trim();
+  invData[idx].price = parseInt(document.getElementById('edit-price').value) || 0;
+  invData[idx].outer_unit = document.getElementById('edit-outer-unit').value.trim() || '箱';
+  invData[idx].inner_unit = document.getElementById('edit-inner-unit').value.trim() || '個';
+  invData[idx].units_per_outer = newUnitsPerOuter;
+  // 箱数を再計算
+  if(newUnitsPerOuter > 1) {
+    invData[idx].outer_quantity = Math.ceil(newQty / newUnitsPerOuter);
+    invData[idx].inner_quantity = newQty % newUnitsPerOuter;
+  }
+
+  // Supabaseを更新
+  _skipRealtimeUntil = Date.now() + 5000;
+  const r = await db.from('inventory').update({
+    name: invData[idx].name,
+    category: invData[idx].cat,
+    clinic: invData[idx].clinic,
+    quantity: newQty,
+    min_quantity: newMin,
+    expiry_date: invData[idx].expiry || null,
+    lot_number: invData[idx].lot,
+    unit_price: invData[idx].price,
+    outer_unit: invData[idx].outer_unit,
+    inner_unit: invData[idx].inner_unit,
+    units_per_outer: newUnitsPerOuter,
+    outer_quantity: invData[idx].outer_quantity || 0,
+    inner_quantity: invData[idx].inner_quantity || 0,
+    updated_at: new Date().toISOString()
+  }).eq('id', item.id);
+
+  if(r.error) {
+    toast('❌', '保存に失敗しました');
+    console.error(r.error);
+    return;
+  }
+
+  closeM('modal-inv-edit');
+  refreshKPI();
+  renderInv('all');
+  toast('✅', '「'+invData[idx].name+'」を更新しました');
+}
+
 function openAddModal() {
   // 選択中の院名をセット（複数院の場合はcurrentClinic、1院の場合はcurrentCorpName）
   var addCl = document.getElementById('add-clinic');
