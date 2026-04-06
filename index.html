@@ -1352,13 +1352,30 @@ function updateClinicSelects() {
   updateTransferSelects();
 }
 
+// 外箱数を返す（units_per_outerがある場合はceil計算）
+function getOuterQty(item) {
+  if(item.units_per_outer && item.units_per_outer > 1) {
+    return Math.ceil(item.qty / item.units_per_outer);
+  }
+  return item.qty;
+}
+
+// 最小在庫と比較（外箱単位）
+function isLow(item) {
+  return getOuterQty(item) <= item.min;
+}
+function isWarn(item) {
+  var oq = getOuterQty(item);
+  return !isLow(item) && oq <= item.min * 1.5;
+}
+
 function refreshKPI() {
   const today = new Date();
 
-  // 要補充（qty <= min）
-  const low = invData.filter(function(i){ return i.qty <= i.min; }).length;
-  // うち緊急（qty < min）
-  const urgent = invData.filter(function(i){ return i.qty < i.min; }).length;
+  // 要補充（外箱単位 <= min）
+  const low = invData.filter(function(i){ return isLow(i); }).length;
+  // うち緊急（外箱単位 < min）
+  const urgent = invData.filter(function(i){ return getOuterQty(i) < i.min; }).length;
 
   // 期限切れ間近（30日以内）
   const expiring = invData.filter(function(i) {
@@ -1403,11 +1420,13 @@ function renderAlerts() {
   if(!alList) return;
 
   const alerts = invData
-    .filter(function(i){ return i.qty <= i.min * 1.5; })
+    .filter(function(i){ return isWarn(i) || isLow(i); })
     .map(function(i) {
-      const lv = i.qty <= i.min ? 'critical' : 'warning';
+      const lv = isLow(i) ? 'critical' : 'warning';
       const icon = catLabel[i.cat] ? catLabel[i.cat].split(' ')[0] : '📦';
-      return { name: i.name, clinic: i.clinic, qty: i.qty, lv: lv, icon: icon };
+      const outerU = i.outer_unit || (i.units_per_outer > 1 ? '箱' : '個');
+      const dispQty = i.units_per_outer > 1 ? getOuterQty(i) + outerU : i.qty + '個';
+      return { name: i.name, clinic: i.clinic, qty: i.qty, dispQty: dispQty, lv: lv, icon: icon };
     })
     .sort(function(a, b){ return a.qty - b.qty; });
 
@@ -1426,7 +1445,7 @@ function renderAlerts() {
     return '<div class="arow">'
       + '<div class="apip ' + a.lv + '"></div>'
       + '<div class="ainfo"><div class="aname">' + a.icon + ' ' + a.name + '</div><div class="aclinic">🏥 ' + a.clinic + '</div></div>'
-      + '<span class="achip ' + a.lv + '">残' + a.qty + '</span>'
+      + '<span class="achip ' + a.lv + '">残' + a.dispQty + '</span>'
       + '<button class="abtn" onclick="addOrder(\'' + a.name.replace(/'/g,"\\'") + '\',\'' + a.clinic + '\',\'—\',\'要確認\')">発注</button>'
       + '</div>';
   }).join('');
@@ -1523,7 +1542,7 @@ function renderCatTabs() {
 
 function renderInv(filter) {
   const clinic = document.getElementById('csel')?.value || 'all';
-  let data = filter === 'low' ? invData.filter(function(i){ return i.qty <= i.min; })
+  let data = filter === 'low' ? invData.filter(function(i){ return isLow(i); })
            : filter === 'all' ? invData
            : invData.filter(function(i){ return i.cat === filter; });
   if(clinic !== 'all') data = data.filter(function(i){ return i.clinic === getClinicName(clinic); });
@@ -1533,7 +1552,7 @@ function renderInv(filter) {
   tbody.innerHTML = data.length === 0
     ? '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--ink3)">該当する在庫がありません</td></tr>'
     : data.map(function(item) {
-      const low = item.qty <= item.min, warn = !low && item.qty <= item.min * 1.5;
+      const low = isLow(item), warn = isWarn(item);
       const d = new Date(item.expiry), days = item.expiry ? Math.ceil((d-today)/86400000) : 999;
       const ec = days < 30 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--ink3)';
       const st = low ? '<span class="chip ng">要補充</span>' : warn ? '<span class="chip warn">注意</span>' : '<span class="chip ok">正常</span>';
@@ -2090,25 +2109,42 @@ async function submitTransfer() {
   invData[fromIdx].qty = newFromQty;
   await db.from('inventory').update({ quantity: newFromQty, updated_at: new Date().toISOString() }).eq('id', fromItem.id);
 
-  // 移送先の在庫を増やす（同名商品があれば加算、なければ新規作成）
-  const toItem = invData.find(function(i){ return i.name === p && i.clinic === toName; });
+  // 移送先の在庫を増やす
+  // ロット番号・有効期限が同じ商品があれば加算、違う場合は別レコードとして作成
+  const toItem = invData.find(function(i){
+    return i.name === p && i.clinic === toName
+      && i.lot === fromItem.lot
+      && i.expiry === fromItem.expiry;
+  });
   if(toItem) {
     const newToQty = toItem.qty + q;
     const toIdx = invData.indexOf(toItem);
     invData[toIdx].qty = newToQty;
     await db.from('inventory').update({ quantity: newToQty, updated_at: new Date().toISOString() }).eq('id', toItem.id);
   } else {
-    // 移送先に同名商品がない場合は新規作成
-    const newItem = Object.assign({}, fromItem, { id: null, clinic: toName, qty: q, outer_quantity: 0, inner_quantity: q, corporation_id: currentCorpId });
+    // 移送先に同ロット・同期限の商品がない場合は新規作成（期限・ロットを引き継ぐ）
+    const outerQty = Math.ceil(q / fromItem.units_per_outer);
+    const innerQty = q % fromItem.units_per_outer;
     const r = await db.from('inventory').insert({
       name: p, category: fromItem.cat, clinic: toName, quantity: q,
       min_quantity: fromItem.min, unit_price: fromItem.price,
-      expiry_date: fromItem.expiry || null, lot_number: fromItem.lot || '',
+      expiry_date: fromItem.expiry || null,
+      lot_number: fromItem.lot || '',
       outer_unit: fromItem.outer_unit, inner_unit: fromItem.inner_unit,
-      units_per_outer: fromItem.units_per_outer, corporation_id: currentCorpId
+      units_per_outer: fromItem.units_per_outer,
+      outer_quantity: outerQty, inner_quantity: innerQty,
+      corporation_id: currentCorpId
     }).select();
     if(r.data && r.data[0]) {
-      newItem.id = r.data[0].id;
+      var newItem = {
+        id: r.data[0].id, name: p, cat: fromItem.cat, clinic: toName,
+        qty: q, min: fromItem.min, max: fromItem.max || 0,
+        expiry: fromItem.expiry || '', lot: fromItem.lot || '',
+        price: fromItem.price || 0,
+        outer_unit: fromItem.outer_unit, inner_unit: fromItem.inner_unit,
+        units_per_outer: fromItem.units_per_outer,
+        outer_quantity: outerQty, inner_quantity: innerQty
+      };
       invData.push(newItem);
     }
   }
