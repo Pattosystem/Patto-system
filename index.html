@@ -526,8 +526,17 @@ tr:hover td{background:#FAFCFF}
     <div class="tbl-wrap"><table><thead><tr><th>製品名</th><th>クリニック</th><th style="text-align:center">推奨発注数</th><th>サプライヤー</th><th>登録日時</th><th>操作</th></tr></thead><tbody id="orders-pending-body"><tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr></tbody></table></div>
   </div>
   <div class="card">
-    <div class="ch"><div class="ch-title">📋 発注履歴（確定済み）</div><span style="font-size:11px;color:var(--ink3)" id="orders-done-cnt">0件</span></div>
-    <div class="tbl-wrap"><table><thead><tr><th>確定日時</th><th>製品名</th><th>クリニック</th><th style="text-align:center">数量</th><th>状態</th></tr></thead><tbody id="orders-done-body"></tbody></table></div>
+    <div class="ch">
+      <div class="ch-title">📋 発注履歴（確定済み）</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <select id="orders-month-filter" onchange="renderOrders()" style="border:1.5px solid #D8E6F5;border-radius:10px;padding:5px 10px;font-size:12px;font-family:inherit;color:var(--ink);outline:none;background:white">
+          <option value="all">すべての月</option>
+        </select>
+        <button onclick="printOrderHistory()" style="background:var(--sky);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">🖨️ 印刷</button>
+        <span style="font-size:11px;color:var(--ink3)" id="orders-done-cnt">0件</span>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table id="orders-done-table"><thead><tr><th>確定日時</th><th>製品名</th><th>クリニック</th><th style="text-align:center">数量</th><th>状態</th></tr></thead><tbody id="orders-done-body"></tbody></table></div>
   </div>
 </div>
 
@@ -1179,6 +1188,25 @@ const invData = [];
 let trHist = [];
 
 let ordersData = { pending: [], done: [] };
+
+// ordersDataをlocalStorageに保存
+function saveOrdersData() {
+  try {
+    localStorage.setItem('ps_orders_' + (currentCorpId||''), JSON.stringify(ordersData));
+  } catch(e) {}
+}
+
+// ordersDataをlocalStorageから復元
+function loadOrdersData() {
+  try {
+    var saved = localStorage.getItem('ps_orders_' + (currentCorpId||''));
+    if(saved) {
+      var parsed = JSON.parse(saved);
+      ordersData.pending = parsed.pending || [];
+      ordersData.done = parsed.done || [];
+    }
+  } catch(e) {}
+}
 
 let campaignData = [];
 let selectedCampaignId = null;
@@ -1998,6 +2026,7 @@ function addOrder(name, clinic, supplier, qty) {
   var qtyDisplay = qtyInBoxes > 0 ? String(qtyInBoxes) : '';
   var qtyNote = qtyInBoxes > 0 ? '（推奨' + qtyInBoxes + outerUnit + '）' : '';
   ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyDisplay, qtyNote: qtyNote, outerUnit: outerUnit, time: nowStr() });
+  saveOrdersData();
   renderOrders();
   toast('🛒','「'+name+'」を発注待ちに登録しました');
 }
@@ -2009,6 +2038,7 @@ function confirmOrder(idx) {
   item.time = nowStr();
   ordersData.done.unshift(item);
   ordersData.pending.splice(idx, 1);
+  saveOrdersData();
   renderOrders();
   // stock_historyに発注記録を保存
   db.from('stock_history').insert({
@@ -2027,6 +2057,7 @@ function confirmOrder(idx) {
 function cancelOrder(idx) {
   const item = ordersData.pending[idx];
   ordersData.pending.splice(idx, 1);
+  saveOrdersData();
   renderOrders();
   toast('🗑️','「'+item.name+'」の発注をキャンセルしました');
 }
@@ -2037,8 +2068,26 @@ function renderOrders() {
   const pc = document.getElementById('orders-pending-cnt');
   const dc = document.getElementById('orders-done-cnt');
   if(!pb) return;
+
+  // 月フィルターの選択肢を更新
+  var monthSel = document.getElementById('orders-month-filter');
+  if(monthSel) {
+    var months = [...new Set(ordersData.done.map(function(o){
+      var m = o.time ? o.time.substring(0, 7) : '';
+      return m;
+    }).filter(Boolean))].sort().reverse();
+    var currentVal = monthSel.value;
+    monthSel.innerHTML = '<option value="all">すべての月</option>'
+      + months.map(function(m){ return '<option value="'+m+'"'+(m===currentVal?' selected':'')+'>'+m+'</option>'; }).join('');
+  }
+
+  // 月フィルター適用
+  var filterMonth = monthSel ? monthSel.value : 'all';
+  var filteredDone = filterMonth === 'all' ? ordersData.done
+    : ordersData.done.filter(function(o){ return o.time && o.time.startsWith(filterMonth); });
+
   if(pc){ pc.textContent = ordersData.pending.length+'件'; pc.style.background = ordersData.pending.length?'var(--redp)':'var(--greenp)'; pc.style.color = ordersData.pending.length?'var(--red)':'var(--green)'; }
-  if(dc) dc.textContent = ordersData.done.length+'件';
+  if(dc) dc.textContent = filteredDone.length+'件';
   pb.innerHTML = ordersData.pending.length === 0
     ? '<tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注待ちはありません</td></tr>'
     : ordersData.pending.map(function(o,i){
@@ -2218,6 +2267,49 @@ function doQTransfer() {
 // ══════════════════════════════
 // マスター管理
 // ══════════════════════════════
+// 発注履歴印刷
+function printOrderHistory() {
+  var monthSel = document.getElementById('orders-month-filter');
+  var filterMonth = monthSel ? monthSel.value : 'all';
+  var filteredDone = filterMonth === 'all' ? ordersData.done
+    : ordersData.done.filter(function(o){ return o.time && o.time.startsWith(filterMonth); });
+  var title = filterMonth === 'all' ? '発注履歴（全期間）' : '発注履歴（' + filterMonth + '）';
+
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    + '<title>' + title + '</title>'
+    + '<style>'
+    + 'body{font-family:"Meiryo",sans-serif;padding:20px;color:#1E293B}'
+    + 'h1{font-size:18px;margin-bottom:4px}'
+    + '.sub{font-size:12px;color:#64748B;margin-bottom:16px}'
+    + 'table{width:100%;border-collapse:collapse;font-size:13px}'
+    + 'th{background:#F1F5F9;padding:8px 12px;text-align:left;border:1px solid #E2E8F0;font-weight:700}'
+    + 'td{padding:8px 12px;border:1px solid #E2E8F0}'
+    + 'tr:nth-child(even){background:#F8FAFC}'
+    + '.warn{color:#D97706;font-weight:700}'
+    + '.ok{color:#16A34A;font-weight:700}'
+    + '@media print{body{padding:0}}'
+    + '</style></head><body>'
+    + '<h1>🛒 ' + title + '</h1>'
+    + '<div class="sub">' + currentCorpName + '　印刷日：' + new Date().toLocaleDateString('ja-JP') + '　全' + filteredDone.length + '件</div>'
+    + '<table><thead><tr><th>確定日時</th><th>製品名</th><th>クリニック</th><th>数量</th><th>サプライヤー</th><th>状態</th></tr></thead><tbody>'
+    + filteredDone.map(function(o){
+        return '<tr>'
+          + '<td>' + (o.time||'—') + '</td>'
+          + '<td><strong>' + o.name + '</strong></td>'
+          + '<td>' + (o.clinic||'—') + '</td>'
+          + '<td>' + (o.qty||'—') + (o.outerUnit||'') + '</td>'
+          + '<td>' + (o.supplier||'—') + '</td>'
+          + '<td class="' + (o.status==='入荷済み'?'ok':'warn') + '">' + (o.status||'入荷待ち') + '</td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>'
+    + '<script>window.onload=function(){window.print();}<\/script>'
+    + '</body></html>';
+
+  var win = window.open('', '_blank');
+  if(win) { win.document.write(html); win.document.close(); }
+}
+
 // mDataをlocalStorageに保存
 function saveMDataToStorage() {
   try {
