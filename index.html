@@ -2471,7 +2471,7 @@ function mEdit(type,id){
   else if(type==='status'){document.getElementById('f-status-name').value=item.name||'';document.getElementById('f-status-color').value=item.color||'#E05470';document.getElementById('f-status-cond').value=item.cond||'';document.getElementById('f-status-desc').value=item.desc||'';statusPreview();}
   document.getElementById('ftitle-'+type).textContent='✏️ 編集中：'+item.name;
 }
-function mSave(type){
+async function mSave(type){
   const nameEl=document.getElementById('f-'+type+'-name');
   const name=nameEl?nameEl.value.trim():'';
   if(!name){toast('⚠️','名前を入力してください');return;}
@@ -2505,25 +2505,21 @@ function mSave(type){
       // Supabaseのcorporationsテーブルの名前は変えない（法人名は別）
       // Supabaseをawaitで確実に更新してからinvDataを再読み込み
       toast('ℹ️', 'クリニック名を更新中...');
-      Promise.all([
-        db.from('inventory').update({ clinic: name }).eq('clinic', oldName),
-        db.from('stock_history').update({ clinic: name }).eq('clinic', oldName)
-      ]).then(function(results) {
-        var err = results.find(function(r){ return r.error; });
-        if(err) {
-          console.error('clinic update error:', err.error);
-          toast('❌', '更新に失敗しました');
-        } else {
-          // 更新完了後にinvDataをDBから再読み込みして確実に同期
-          loadInventoryFromDB().then(function(){
-            updateTransferSelects();
-            updateTrProductByClinic();
-            renderInv('all');
-            refreshKPI();
-            toast('✅','「'+oldName+'」→「'+name+'」に変更しました（在庫データも更新済み）');
-          });
-        }
-      });
+      var r1 = await db.from('inventory').update({ clinic: name }).eq('clinic', oldName);
+      var r2 = await db.from('stock_history').update({ clinic: name }).eq('clinic', oldName);
+      if(r1.error || r2.error) {
+        console.error('clinic update error:', r1.error || r2.error);
+        toast('❌', '更新に失敗しました');
+      } else {
+        // 更新完了後にDBから再読み込みして確実に同期
+        await loadInventoryFromDB();
+        updateTransferSelects();
+        updateTrProductByClinic();
+        renderInv('all');
+        renderCatTabs();
+        refreshKPI();
+        toast('✅','「'+oldName+'」→「'+name+'」に変更しました');
+      }
     } else {
       toast('✅','「'+name+'」を更新しました');
     }
