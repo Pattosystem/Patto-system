@@ -766,7 +766,7 @@ tr:hover td{background:#FAFCFF}
       </div>
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>商品名</th><th>カテゴリ</th><th style="text-align:center">現在庫</th><th style="text-align:center">最小在庫</th><th style="text-align:center">上限在庫</th><th style="text-align:center">発注量</th><th style="text-align:center">リードタイム</th><th>状態</th></tr></thead>
+          <thead><tr><th>商品名</th><th>カテゴリ</th><th>クリニック</th><th style="text-align:center">現在庫（箱）</th><th style="text-align:center">最小在庫（箱）</th><th style="text-align:center">上限在庫</th><th style="text-align:center">発注量（箱）</th><th style="text-align:center">リードタイム</th><th>状態</th></tr></thead>
           <tbody id="sopt-body"></tbody>
         </table>
       </div>
@@ -1362,11 +1362,11 @@ function getOuterQty(item) {
 
 // 最小在庫と比較（外箱単位）
 function isLow(item) {
-  return getOuterQty(item) <= item.min;
+  return getOuterQty(item) < item.min;
 }
 function isWarn(item) {
   var oq = getOuterQty(item);
-  return !isLow(item) && oq <= item.min * 1.5;
+  return !isLow(item) && oq <= item.min;
 }
 
 function refreshKPI() {
@@ -1420,7 +1420,7 @@ function renderAlerts() {
   if(!alList) return;
 
   const alerts = invData
-    .filter(function(i){ return isWarn(i) || isLow(i); })
+    .filter(function(i){ return isLow(i) || isWarn(i); })
     .map(function(i) {
       const lv = isLow(i) ? 'critical' : 'warning';
       const icon = catLabel[i.cat] ? catLabel[i.cat].split(' ')[0] : '📦';
@@ -1542,7 +1542,7 @@ function renderCatTabs() {
 
 function renderInv(filter) {
   const clinic = document.getElementById('csel')?.value || 'all';
-  let data = filter === 'low' ? invData.filter(function(i){ return isLow(i); })
+  let data = filter === 'low' ? invData.filter(function(i){ return isLow(i) || isWarn(i); })
            : filter === 'all' ? invData
            : invData.filter(function(i){ return i.cat === filter; });
   if(clinic !== 'all') data = data.filter(function(i){ return i.clinic === getClinicName(clinic); });
@@ -1552,7 +1552,7 @@ function renderInv(filter) {
   tbody.innerHTML = data.length === 0
     ? '<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--ink3)">該当する在庫がありません</td></tr>'
     : data.map(function(item) {
-      const low = isLow(item), warn = isWarn(item);
+      const low = isLow(item), warn = !low && isWarn(item);
       const d = new Date(item.expiry), days = item.expiry ? Math.ceil((d-today)/86400000) : 999;
       const ec = days < 30 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--ink3)';
       const st = low ? '<span class="chip ng">要補充</span>' : warn ? '<span class="chip warn">注意</span>' : '<span class="chip ok">正常</span>';
@@ -2481,11 +2481,43 @@ async function saveSoptToDB() {
 function renderSoptTable(){
   const tbody=document.getElementById('sopt-body');if(!tbody)return;
   const data=getStockOptData();
-  tbody.innerHTML=data.map(function(item,i){
-    const sc=item.currentQty<=item.min?'var(--red)':item.currentQty>=item.max?'var(--amber)':'var(--green)';
-    const sb=item.currentQty<=item.min?'var(--redp)':item.currentQty>=item.max?'var(--amberp)':'var(--greenp)';
-    const sl=item.currentQty<=item.min?'要補充':item.currentQty>=item.max?'過剰':'正常';
-    return '<tr id="sopt-row-'+i+'"><td style="font-weight:700">'+item.name+'</td><td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td><td style="text-align:center;font-weight:800;color:'+sc+'">'+item.currentQty+'</td><td style="text-align:center"><input type="number" value="'+item.min+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].min=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.max+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].max=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.orderQty+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].orderQty=+this.value;markSoptUnsaved()"></td><td style="text-align:center"><input type="number" value="'+item.leadDays+'" min="0" style="width:50px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].leadDays=+this.value;markSoptUnsaved()"></td><td><span style="font-size:11px;background:'+sb+';color:'+sc+';padding:2px 8px;border-radius:10px;font-weight:700">'+sl+'</span></td></tr>';
+  // 院フィルター取得
+  var clinicSel = document.getElementById('csel');
+  var clinicFilter = clinicSel ? clinicSel.value : 'all';
+
+  // フィルタ適用
+  var filtered = data;
+  if(clinicFilter !== 'all') {
+    var clinicName = getClinicName(clinicFilter);
+    filtered = data.filter(function(item){ return item.clinic === clinicName; });
+  }
+
+  if(filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--ink3);padding:20px">この院の在庫データがありません</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML=filtered.map(function(item,i){
+    // 外箱数で表示・判定
+    var invItem = invData.find(function(x){ return x.id === item.id; });
+    var upo = (invItem && invItem.units_per_outer > 1) ? invItem.units_per_outer : 1;
+    var outerU = (invItem && invItem.outer_unit) || (upo > 1 ? '箱' : '個');
+    var currentBoxes = upo > 1 ? Math.ceil(item.currentQty / upo) : item.currentQty;
+    var sc = currentBoxes < item.min ? 'var(--red)' : currentBoxes >= item.max ? 'var(--amber)' : 'var(--green)';
+    var sb = currentBoxes < item.min ? 'var(--redp)' : currentBoxes >= item.max ? 'var(--amberp)' : 'var(--greenp)';
+    var sl = currentBoxes < item.min ? '要補充' : currentBoxes >= item.max ? '過剰' : '正常';
+    var dispQty = upo > 1 ? currentBoxes + outerU + '(' + item.currentQty + (invItem.inner_unit||'個') + ')' : item.currentQty + outerU;
+    return '<tr id="sopt-row-'+i+'">'
+      + '<td style="font-weight:700">'+item.name+'</td>'
+      + '<td><span class="chip sky">'+(catLabel[item.cat]||item.cat)+'</span></td>'
+      + '<td style="font-size:11.5px;color:var(--ink3)">'+( item.clinic||'—')+'</td>'
+      + '<td style="text-align:center;font-weight:800;color:'+sc+'">'+dispQty+'</td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.min+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].min=+this.value;markSoptUnsaved()"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.max+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].max=+this.value;markSoptUnsaved()"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.orderQty+'" min="0" style="width:60px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].orderQty=+this.value;markSoptUnsaved()"></td>'
+      + '<td style="text-align:center"><input type="number" value="'+item.leadDays+'" min="0" style="width:50px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px;font-size:12px;font-family:inherit" onchange="getStockOptData()['+i+'].leadDays=+this.value;markSoptUnsaved()"></td>'
+      + '<td><span style="font-size:11px;background:'+sb+';color:'+sc+';padding:2px 8px;border-radius:10px;font-weight:700">'+sl+'</span></td>'
+      + '</tr>';
   }).join('');
 }
 function renderSoptProposals(){
@@ -2760,7 +2792,7 @@ function openUserModal() {
 }
 
 function setUser(name, initial){ document.getElementById('uname').textContent=name; document.getElementById('uav').textContent=initial; closeM('modal-user'); toast('👤',name+'として操作中'); }
-function onClinic(){ const v=document.getElementById('csel').value; toast('🏥',(v==='all'?'全院統合':getClinicName(v))+'の在庫を表示中'); if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all'); }
+function onClinic(){ const v=document.getElementById('csel').value; toast('🏥',(v==='all'?'全院統合':getClinicName(v))+'の在庫を表示中'); if(document.getElementById('pg-inventory').classList.contains('active')) renderInv('all'); if(document.getElementById('pg-stockopt').classList.contains('active')) renderSoptTable(); }
 function toast(icon, msg){ const el=document.createElement('div'); el.className='toast'; el.innerHTML='<span>'+icon+'</span><span>'+msg+'</span>'; document.getElementById('toasts').appendChild(el); setTimeout(function(){ el.remove(); }, 3000); }
 
 // ══════════════════════════════
