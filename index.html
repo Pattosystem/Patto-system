@@ -2006,6 +2006,7 @@ function submitAdd() {
   updateUnitPreview();
   closeM('modal-add');
   toast('✅', '「' + name + '」を入荷登録しました（合計' + totalQty + '個）');
+    markOrderReceived();
 }
 
 // ══════════════════════════════
@@ -2346,49 +2347,56 @@ function printOrderHistory() {
   if(win) { win.document.write(html); win.document.close(); }
 }
 
-// 発注履歴から入荷登録
+// 発注履歴から入荷登録モーダルを開く
+// ロット・消費期限が異なる場合も正しく管理できるよう、
+// 入荷登録モーダルを開いてスタッフが確認・入力する方式
+var _pendingReceiveDoneIdx = null;
+
 function openReceiveOrder(doneIdx) {
   var o = ordersData.done[doneIdx];
   if(!o) return;
-  // 数量文字列から数値を取り出す
-  var qtyNum = parseInt(String(o.qty).replace(/[^0-9]/g, '')) || 1;
-  var unitStr = String(o.qty).replace(/[0-9]/g, '').trim() || '箱';
 
-  if(!confirm('「' + o.name + '」の入荷登録を行いますか？\n数量: ' + o.qty + '\nクリニック: ' + (o.clinic||currentCorpName))) return;
+  // どの発注履歴から開いたか記憶しておく
+  _pendingReceiveDoneIdx = doneIdx;
 
-  // 発注状態を「入荷済み」に変更
-  ordersData.done[doneIdx].status = '入荷済み';
-  saveOrdersData();
-  renderOrders();
+  // 入荷登録モーダルを開いて商品名・クリニックを自動入力
+  openAddModal();
 
-  // 在庫に反映：対象クリニックの対象商品を探して加算
+  // 商品名をセット
+  var nameEl = document.getElementById('add-name');
+  if(nameEl) nameEl.value = o.name || '';
+
+  // クリニックをセット
+  var clinicEl = document.getElementById('add-clinic');
+  var clinicSingleEl = document.getElementById('add-clinic-single');
+  var wrapEl = document.getElementById('add-clinic-wrap');
   var clinic = o.clinic || currentCorpName;
-  var invItem = invData.find(function(i){ return i.name === o.name && i.clinic === clinic; });
-  var upo = invItem ? (invItem.units_per_outer || 1) : 1;
+  if(wrapEl && wrapEl.style.display !== 'none' && clinicEl) {
+    // 複数院モード：selectの選択肢からクリニックを選ぶ
+    for(var i=0; i<clinicEl.options.length; i++){
+      if(clinicEl.options[i].value === clinic){
+        clinicEl.selectedIndex = i;
+        break;
+      }
+    }
+  } else if(clinicSingleEl) {
+    clinicSingleEl.value = clinic;
+  }
 
-  // 箱単位の場合はバイアル数に変換
-  var totalQty = unitStr.includes('箱') || unitStr.includes('box') ? qtyNum * upo : qtyNum;
+  // 発注番号から参照していることをメモ欄に表示
+  var lotEl = document.getElementById('add-lot');
+  if(lotEl && !lotEl.value) lotEl.placeholder = '入荷したロット番号を入力';
 
-  if(invItem) {
-    var newQty = invItem.qty + totalQty;
-    var idx = invData.indexOf(invItem);
-    invData[idx].qty = newQty;
-    _skipRealtimeUntil = Date.now() + 5000;
-    db.from('inventory').update({ quantity: newQty, updated_at: new Date().toISOString() }).eq('id', invItem.id)
-      .then(function(r){ if(r.error) console.error(r.error); });
-    db.from('stock_history').insert({
-      inventory_id: invItem.id, product_name: o.name, action_type: 'in',
-      quantity: totalQty, clinic: clinic,
-      staff_name: document.getElementById('uname').textContent || '—',
-      memo: '発注履歴から入荷登録 ' + o.qty,
-      corporation_id: currentCorpId
-    });
-    refreshKPI();
-    renderInv('all');
-    updateProductSelects();
-    toast('✅', '「' + o.name + '」' + o.qty + ' を入荷しました（在庫に反映済み）');
-  } else {
-    toast('⚠️', '状態を入荷済みに変更しました。在庫一覧に商品が見つからないため手動で入庫登録してください。');
+  toast('ℹ️', '商品名・クリニックを自動入力しました。ロット番号・消費期限・数量を確認して登録してください。');
+}
+
+// 入荷登録完了後に発注履歴を「入荷済み」に更新
+function markOrderReceived() {
+  if(_pendingReceiveDoneIdx !== null) {
+    ordersData.done[_pendingReceiveDoneIdx].status = '入荷済み';
+    saveOrdersData();
+    renderOrders();
+    _pendingReceiveDoneIdx = null;
   }
 }
 
