@@ -2120,7 +2120,29 @@ function renderOrders() {
           + '</div></td>'
           + '</tr>';
       }).join('');
-  if(db2) db2.innerHTML = ordersData.done.map(function(o){ return '<tr><td style="color:var(--ink3);font-size:11.5px">'+o.time+'</td><td style="font-weight:700">'+o.name+'</td><td>'+o.clinic+'</td><td style="text-align:center">'+o.qty+'</td><td><span class="chip '+(o.status==='入荷済み'?'ok':'warn')+'">'+o.status+'</span></td></tr>'; }).join('');
+  if(db2) {
+    if(filteredDone.length === 0) {
+      db2.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ink3);padding:20px">発注履歴がありません</td></tr>';
+    } else {
+      db2.innerHTML = filteredDone.map(function(o) {
+        var realIdx = ordersData.done.indexOf(o);
+        var statusChip = o.status === '入荷済み'
+          ? '<span class="chip ok">入荷済み</span>'
+          : '<span class="chip warn">入荷待ち</span>';
+        var actionBtn = o.status !== '入荷済み'
+          ? '<button onclick="openReceiveOrder(' + realIdx + ')" style="background:#DCFCE7;color:#16A34A;border:1.5px solid #86EFAC;border-radius:7px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:6px">📦 入荷登録</button>'
+          : '';
+        return '<tr>'
+          + '<td style="color:var(--ink3);font-size:11.5px">' + (o.time||'—') + '</td>'
+          + '<td style="font-weight:700">' + o.name + '</td>'
+          + '<td>' + (o.clinic||'—') + '</td>'
+          + '<td style="text-align:center">' + (o.qty||'—') + '</td>'
+          + '<td style="color:var(--ink3);font-size:11px">' + (o.delivery ? '希望: '+o.delivery : '') + (o.supplier && o.supplier!=='—' ? (o.delivery?' / ':'')+o.supplier : '') + '</td>'
+          + '<td>' + statusChip + actionBtn + '</td>'
+          + '</tr>';
+      }).join('');
+    }
+  }
 }
 
 function openNewOrderModal() {
