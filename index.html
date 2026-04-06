@@ -1964,9 +1964,16 @@ function addOrder(name, clinic, supplier, qty) {
   if(exists){ toast('ℹ️','「'+name+'」はすでに発注待ちに登録されています'); return; }
   // qty が数値なら「〇個（推奨）」と表示
   // qty が数値なら数値のまま保存（inputのvalueとして使うため）
+  // 発注単位は「外箱」なので、在庫のunits_per_outerで割って箱数に変換
+  var invItem = invData.find(function(i){ return i.name === name && i.clinic === clinic; });
+  var unitsPerOuter = (invItem && invItem.units_per_outer > 1) ? invItem.units_per_outer : 1;
+  var outerUnit = (invItem && invItem.outer_unit) || '箱';
   var qtyVal = (typeof qty === 'number' && qty > 0) ? qty : 0;
-  var qtyDisplay = qtyVal > 0 ? String(qtyVal) : '';
-  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyDisplay, qtyNote: qtyVal > 0 ? '（推奨'+ qtyVal +'個）': '', time: nowStr() });
+  // 個数が渡された場合は箱数に変換
+  var qtyInBoxes = unitsPerOuter > 1 ? Math.ceil(qtyVal / unitsPerOuter) : qtyVal;
+  var qtyDisplay = qtyInBoxes > 0 ? String(qtyInBoxes) : '';
+  var qtyNote = qtyInBoxes > 0 ? '（推奨' + qtyInBoxes + outerUnit + '）' : '';
+  ordersData.pending.unshift({ name, clinic, supplier: supplier||'—', qty: qtyDisplay, qtyNote: qtyNote, outerUnit: outerUnit, time: nowStr() });
   renderOrders();
   toast('🛒','「'+name+'」を発注待ちに登録しました');
 }
@@ -1987,7 +1994,7 @@ function confirmOrder(idx) {
     quantity: item.qty || 0,
     clinic: item.clinic,
     staff_name: document.getElementById('uname').textContent,
-    memo: '発注確定 サプライヤー:' + (item.supplier || '—'),
+    memo: '発注確定 ' + item.qty + (item.outerUnit||'箱') + ' サプライヤー:' + (item.supplier || '—'),
     corporation_id: currentCorpId
   });
   toast('✅', '「'+item.name+'」を発注確定しました');
@@ -2023,7 +2030,7 @@ function renderOrders() {
           + 'style="width:70px;text-align:center;border:1.5px solid #D8E6F5;border-radius:6px;padding:4px 6px;font-size:13px;font-weight:700;font-family:inherit" '
           + 'onchange="ordersData.pending['+i+'].qty=this.value" '
           + 'oninput="ordersData.pending['+i+'].qty=this.value">'
-          + '<span style="font-size:11px;color:var(--ink3)">個</span>'
+          + '<span style="font-size:11px;color:var(--ink3)">' + (o.outerUnit || '箱') + '</span>'
           + '</div>'
           + '</div>'
           + '</td>'
