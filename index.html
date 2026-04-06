@@ -1637,6 +1637,8 @@ async function deleteInventory(id, name) {
   if(idx >= 0) invData.splice(idx, 1);
   renderInv('all');
   refreshKPI();
+  updateProductSelects();
+  renderCatTabs();
   toast('🗑️', '「' + name + '」を削除しました');
 }
 
@@ -1919,6 +1921,7 @@ async function submitDelivery() {
       // 画面を即時更新
       refreshKPI();
       renderInv('all');
+      updateProductSelects();
     }
   }
 }
@@ -1990,6 +1993,8 @@ function submitAdd() {
     renderInv('all');
     refreshKPI();
     updateClinicSelects();
+    updateProductSelects();
+    renderCatTabs();
     db.from('stock_history').insert({ inventory_id: localItem.id, product_name: name, action_type: 'in', quantity: totalQty, clinic: newRow.clinic, staff_name: document.getElementById('uname').textContent, memo: '入荷登録', corporation_id: currentCorpId });
   });
   ['add-name','add-price','add-min','add-expiry','add-lot','add-supplier'].forEach(function(id){ const el=document.getElementById(id); if(el) el.value=''; });
@@ -2238,6 +2243,7 @@ async function submitTransfer() {
   renderTrHist();
   refreshKPI();
   renderInv('all');
+  updateProductSelects();
   document.getElementById('tr-qty').value = '';
   toast('🔀', p+' × '+q+'（'+fromName+' → '+toName+'）');
 }
