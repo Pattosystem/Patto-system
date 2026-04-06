@@ -92,6 +92,10 @@ body{font-family:"M PLUS Rounded 1c",sans-serif;background:var(--surf);color:var
 .loading{text-align:center;padding:40px;color:var(--ink3)}
 .lspinner{width:32px;height:32px;border:3px solid var(--bdr);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
+.ubtn{padding:12px;border-radius:12px;border:2px solid var(--bdr);background:white;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;color:var(--ink2);transition:all .15s}
+.ubtn.active{background:var(--orangeL);border-color:var(--orange);color:var(--orange)}
+.pbtn{padding:12px;border-radius:12px;border:2px solid var(--bdr);background:white;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;color:var(--ink2);transition:all .15s}
+.pbtn.active{background:var(--redL);border-color:var(--red);color:var(--red)}
 .page{display:none}
 .page.active{display:block}
 .bnav{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1.5px solid var(--bdr);display:grid;grid-template-columns:repeat(3,1fr);padding:8px 0 env(safe-area-inset-bottom)}
@@ -159,6 +163,27 @@ body{font-family:"M PLUS Rounded 1c",sans-serif;background:var(--surf);color:var
         <button class="qbtn plus" onclick="changeQty(1)">＋</button>
       </div>
       <div class="qunit" id="qty-unit"></div>
+
+      <!-- 単位切替（箱管理商品のみ表示） -->
+      <div id="unit-toggle" style="display:none;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">入力単位</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button id="unit-btn-outer" class="ubtn active" onclick="setUnit('outer')">📦 箱単位</button>
+          <button id="unit-btn-inner" class="ubtn" onclick="setUnit('inner')">💊 バラ単位</button>
+        </div>
+      </div>
+
+      <!-- 用途選択（出庫時のみ表示） -->
+      <div id="purpose-wrap" style="display:none;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:8px">出庫用途 *</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button id="purp-patient" class="pbtn active" onclick="setPurp('patient')">💉 患者使用</button>
+          <button id="purp-demo" class="pbtn" onclick="setPurp('demo')">🧪 デモ</button>
+          <button id="purp-discard" class="pbtn" onclick="setPurp('discard')">🗑️ 廃棄</button>
+          <button id="purp-other" class="pbtn" onclick="setPurp('other')">📝 その他</button>
+        </div>
+      </div>
+
       <select class="fsel" id="staff-sel"><option value="">-- 操作者を選択 --</option></select>
       <input class="fmemo" id="memo-inp" type="text" placeholder="メモ（任意）">
       <button class="execbtn out" id="exec-btn" onclick="execStock()">📤 出庫を記録する</button>
@@ -186,7 +211,7 @@ body{font-family:"M PLUS Rounded 1c",sans-serif;background:var(--surf);color:var
 const SURL="https://aeacglgdhskyaachsmdx.supabase.co";
 const SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlYWNnbGdkaHNreWFhY2hzbWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDczMjAsImV4cCI6MjA5MDU4MzMyMH0.zmcTXwXV33EdpjVxZHfyej-ys4F228FBrZDo5sg9idQ";
 const db=supabase.createClient(SURL,SKEY);
-let inv=[],selItem=null,mode="out",qty=1,cat="all",corpId=null,corpName="",clinic="",staffList=[];
+let inv=[],selItem=null,mode="out",qty=1,cat="all",corpId=null,corpName="",clinic="",staffList=[],unit="outer",purpose="patient";
 const catMap={injection:"💉 注射・点滴",skincare:"🧴 スキンケア",supply:"📋 消耗品",device:"🔧 医療機器"};
 
 async function doLogin(){
@@ -319,6 +344,24 @@ function selProd(id){
   document.getElementById("sel-info").textContent="現在庫: "+fqty(selItem)+(selItem.expiry_date?" / 期限:"+selItem.expiry_date:"");
   var ul=document.getElementById("qty-unit");
   ul.textContent=selItem.units_per_outer>1?"単位:"+(selItem.outer_unit||"箱")+"（1"+(selItem.outer_unit||"箱")+"="+selItem.units_per_outer+(selItem.inner_unit||"個")+"）":"単位:"+(selItem.inner_unit||"個");
+  // 単位切替ボタン（箱管理商品のみ表示）
+  var unitToggle=document.getElementById("unit-toggle");
+  if(selItem.units_per_outer>1){
+    unitToggle.style.display="block";
+    unit="outer"; // デフォルト箱
+    setUnit("outer");
+  }else{
+    unitToggle.style.display="none";
+    unit="inner";
+  }
+  // 用途選択（出庫時のみ）
+  var purposeWrap=document.getElementById("purpose-wrap");
+  if(mode==="out"){
+    purposeWrap.style.display="block";
+    purpose="patient";setPurp("patient");
+  }else{
+    purposeWrap.style.display="none";
+  }
   document.getElementById("qty-panel").classList.add("show");
   document.getElementById("memo-inp").value="";
   renderProds();
@@ -331,7 +374,29 @@ function setMode(m){
   document.getElementById("tab-in").className="tab-btn in"+(m==="in"?" active":"");
   var btn=document.getElementById("exec-btn");
   btn.className="execbtn "+m;btn.innerHTML=m==="out"?"📤 出庫を記録する":"📥 入庫を記録する";
+  // 用途選択は出庫時のみ
+  var pw=document.getElementById("purpose-wrap");
+  if(pw)pw.style.display="none";
   renderProds();
+}
+
+function setUnit(u){
+  unit=u;
+  document.getElementById("unit-btn-outer").className="ubtn"+(u==="outer"?" active":"");
+  document.getElementById("unit-btn-inner").className="ubtn"+(u==="inner"?" active":"");
+  // ラベル更新
+  if(selItem){
+    var upo=selItem.units_per_outer>1?selItem.units_per_outer:1;
+    var ul=document.getElementById("qty-unit");
+    if(u==="outer")ul.textContent="1"+(selItem.outer_unit||"箱")+" = "+upo+(selItem.inner_unit||"個");
+    else ul.textContent="バラ（"+( selItem.inner_unit||"個")+"）単位で入力";
+  }
+}
+
+function setPurp(p){
+  purpose=p;
+  document.querySelectorAll(".pbtn").forEach(function(b){b.classList.remove("active");});
+  var btn=document.getElementById("purp-"+p);if(btn)btn.classList.add("active");
 }
 
 function changeQty(d){qty=Math.max(1,qty+d);document.getElementById("qty-disp").textContent=qty;}
@@ -342,14 +407,18 @@ async function execStock(){
   if(!staff){toast("⚠️","操作者を選択してください");return;}
   var btn=document.getElementById("exec-btn");btn.disabled=true;
   var upo=selItem.units_per_outer>1?selItem.units_per_outer:1;
-  var tq=qty*upo;
+  // 箱単位orバラ単位で計算
+  var tq=unit==="outer"?qty*upo:qty;
   var nq=mode==="out"?selItem.quantity-tq:selItem.quantity+tq;
   if(mode==="out"&&nq<0){toast("⚠️","在庫が足りません（現在:"+Math.ceil(selItem.quantity/upo)+(selItem.outer_unit||"箱")+"）");btn.disabled=false;return;}
   var memo=document.getElementById("memo-inp").value;
+  var purposeLabels={patient:"患者使用",demo:"デモ",discard:"廃棄",other:"その他"};
+  var purposeLabel=mode==="out"?(purposeLabels[purpose]||"患者使用"):"入荷";
+  var fullMemo=purposeLabel+(memo?" / "+memo:"");
   var ur=await db.from("inventory").update({quantity:nq,updated_at:new Date().toISOString()}).eq("id",selItem.id);
   if(ur.error){toast("❌","更新に失敗しました");btn.disabled=false;return;}
-  await db.from("stock_history").insert({inventory_id:selItem.id,product_name:selItem.name,action_type:mode,quantity:tq,clinic:selItem.clinic,staff_name:staff,memo:memo,corporation_id:corpId});
-  var ud=upo>1?qty+(selItem.outer_unit||"箱"):qty+"個";
+  await db.from("stock_history").insert({inventory_id:selItem.id,product_name:selItem.name,action_type:mode,quantity:tq,clinic:selItem.clinic,staff_name:staff,memo:fullMemo,corporation_id:corpId});
+  var ud=unit==="outer"&&upo>1?qty+(selItem.outer_unit||"箱"):tq+(selItem.inner_unit||"個");
   toast(mode==="out"?"📤":"📥",selItem.name+" × "+ud+(mode==="out"?" 出庫":" 入庫")+"しました");
   selItem=null;qty=1;document.getElementById("qty-panel").classList.remove("show");btn.disabled=false;
   await loadInv();renderProds();renderCheck();renderCats();loadHist();
