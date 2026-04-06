@@ -492,7 +492,7 @@ tr:hover td{background:#FAFCFF}
       <div class="mform-title">移送を登録する</div>
       <div class="fgroup"><label class="flabel">製品</label><select class="finp" id="tr-prod" onchange="updateTrQtyPreview()"><option>選択してください</option></select></div>
       <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:end;margin-bottom:10px">
-        <div><label class="flabel">移送元</label><select class="finp" id="tr-from"></select></div>
+        <div><label class="flabel">移送元</label><select class="finp" id="tr-from" onchange="updateTrProductByClinic()"></select></div>
         <div style="font-size:18px;color:var(--sky);padding-bottom:4px;text-align:center">→</div>
         <div><label class="flabel">移送先</label><select class="finp" id="tr-to"></select></div>
       </div>
@@ -1255,14 +1255,38 @@ async function initDBData() {
 
 // 製品セレクトを更新
 function updateProductSelects() {
-  const names = invData.map(function(i){ return i.name; });
-  const qprod = document.getElementById('q-prod');
-  if(qprod) {
-    qprod.innerHTML = '<option>製品を選択...</option>' + names.map(function(n){ return '<option>' + n + '</option>'; }).join('');
-  }
-  const trprod = document.getElementById('tr-prod');
+  updateTrProductByClinic();
+}
+
+// 移送元クリニックに応じた製品一覧を更新
+function updateTrProductByClinic() {
+  var fromSel = document.getElementById('tr-from');
+  var fromIdx = fromSel ? fromSel.value : '1';
+  var fromName = getClinicName(fromIdx);
+
+  // 移送フォーム：移送元の在庫のみ表示（在庫数・期限付き）
+  var trprod = document.getElementById('tr-prod');
   if(trprod) {
-    trprod.innerHTML = '<option>選択してください</option>' + names.map(function(n){ return '<option>' + n + '</option>'; }).join('');
+    var fromItems = invData.filter(function(i){ return i.clinic === fromName && i.qty > 0; });
+    var opts = fromItems.map(function(item) {
+      var upo = item.units_per_outer > 1 ? item.units_per_outer : 1;
+      var boxes = upo > 1 ? Math.ceil(item.qty / upo) : item.qty;
+      var outerU = item.outer_unit || (upo > 1 ? '箱' : '個');
+      var qtyStr = upo > 1 ? boxes + outerU + '(' + item.qty + (item.inner_unit||'個') + ')' : item.qty + outerU;
+      var expiryStr = item.expiry ? '期限:' + item.expiry : '';
+      var lotStr = item.lot ? 'LOT:' + item.lot : '';
+      var meta = [qtyStr, expiryStr, lotStr].filter(Boolean).join(' / ');
+      return '<option value="' + item.name + '" data-inv-id="' + item.id + '">【在庫 ' + meta + '】 ' + item.name + '</option>';
+    });
+    trprod.innerHTML = '<option value="">選択してください</option>' + opts.join('');
+  }
+
+  // クイック移送（ダッシュボード）
+  var qprod = document.getElementById('q-prod');
+  if(qprod) {
+    var allItems = invData.filter(function(i){ return i.qty > 0; });
+    var uniqueNames = [...new Set(allItems.map(function(i){ return i.name; }))];
+    qprod.innerHTML = '<option value="">製品を選択...</option>' + uniqueNames.map(function(n){ return '<option value="'+n+'">'+n+'</option>'; }).join('');
   }
 }
 
