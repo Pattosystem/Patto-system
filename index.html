@@ -2493,6 +2493,16 @@ function mSave(type){
       invData.forEach(function(item){
         if(item.clinic === oldName) item.clinic = name;
       });
+      // currentCorpName・currentClinicも更新（同じ院名だった場合）
+      if(currentCorpName === oldName) {
+        currentCorpName = name;
+        try { localStorage.setItem('ps_corp_name', name); } catch(e) {}
+      }
+      if(currentClinic === oldName) {
+        currentClinic = name;
+        try { localStorage.setItem('ps_clinic', name); } catch(e) {}
+      }
+      // Supabaseのcorporationsテーブルの名前は変えない（法人名は別）
       // Supabaseのinventoryを更新
       db.from('inventory').update({ clinic: name }).eq('clinic', oldName)
         .then(function(r){ if(r.error) console.error('inventory clinic update error:', r.error); });
