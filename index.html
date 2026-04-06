@@ -2503,21 +2503,35 @@ function mSave(type){
         try { localStorage.setItem('ps_clinic', name); } catch(e) {}
       }
       // Supabaseのcorporationsテーブルの名前は変えない（法人名は別）
-      // Supabaseのinventoryを更新
-      db.from('inventory').update({ clinic: name }).eq('clinic', oldName)
-        .then(function(r){ if(r.error) console.error('inventory clinic update error:', r.error); });
-      // Supabaseのstock_historyも更新
-      db.from('stock_history').update({ clinic: name }).eq('clinic', oldName)
-        .then(function(r){ if(r.error) console.error('history clinic update error:', r.error); });
-      toast('✅','「'+oldName+'」→「'+name+'」に変更しました（在庫データも更新済み）');
+      // Supabaseをawaitで確実に更新してからinvDataを再読み込み
+      toast('ℹ️', 'クリニック名を更新中...');
+      Promise.all([
+        db.from('inventory').update({ clinic: name }).eq('clinic', oldName),
+        db.from('stock_history').update({ clinic: name }).eq('clinic', oldName)
+      ]).then(function(results) {
+        var err = results.find(function(r){ return r.error; });
+        if(err) {
+          console.error('clinic update error:', err.error);
+          toast('❌', '更新に失敗しました');
+        } else {
+          // 更新完了後にinvDataをDBから再読み込みして確実に同期
+          loadInventoryFromDB().then(function(){
+            updateTransferSelects();
+            updateTrProductByClinic();
+            renderInv('all');
+            refreshKPI();
+            toast('✅','「'+oldName+'」→「'+name+'」に変更しました（在庫データも更新済み）');
+          });
+        }
+      });
     } else {
       toast('✅','「'+name+'」を更新しました');
     }
   }
   else{mData[type].push(Object.assign({id:++nid},data));toast('✅','「'+name+'」を追加しました');}
-  mReset(type);mRenderList(type);if(type==='clinic'){updateClinicSelects();renderInv('all');refreshKPI();}saveMDataToStorage();
+  mReset(type);mRenderList(type);if(type==='clinic'){updateClinicSelects();updateTransferSelects();updateTrProductByClinic();renderInv('all');refreshKPI();}saveMDataToStorage();
 }
-function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);if(type==='clinic')updateClinicSelects();saveMDataToStorage();toast('🗑️','「'+item.name+'」を削除しました'); }
+function mDel(type,id){ const item=mData[type].find(function(x){return x.id===id;});mData[type]=mData[type].filter(function(x){return x.id!==id;});mRenderList(type);if(type==='clinic'){updateClinicSelects();updateTransferSelects();updateTrProductByClinic();}saveMDataToStorage();toast('🗑️','「'+item.name+'」を削除しました'); }
 function mReset(type){
   document.getElementById('fid-'+type).value='';
   ['name','addr','tel','icon','desc','person','email','items'].forEach(function(f){const el=document.getElementById('f-'+type+'-'+f);if(el)el.value='';});
