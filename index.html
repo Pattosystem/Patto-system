@@ -612,7 +612,6 @@ tr:hover td{background:#FAFCFF}
   <div id="mp-cat" class="mpanel"><div class="mgrid">
     <div class="mform"><div class="mform-title" id="ftitle-cat">📂 カテゴリを追加</div><input type="hidden" id="fid-cat">
       <div class="fgroup"><label class="flabel">カテゴリ名 *</label><input class="finp" id="f-cat-name" placeholder="例: 注射・点滴薬剤"></div>
-      <div class="fgroup"><label class="flabel">アイコン</label><input class="finp" id="f-cat-icon" placeholder="例: 💉" style="font-size:16px"></div>
       <div class="fgroup"><label class="flabel">説明</label><input class="finp" id="f-cat-desc" placeholder="例: ボトックス・ヒアルロン酸など"></div>
       <div class="fgroup"><label class="flabel">保管条件</label><select class="finp" id="f-cat-storage"><option>常温保存</option><option>冷蔵保存（2〜8℃）</option><option>冷凍保存</option><option>遮光保存</option></select></div>
       <div class="btn-row"><button class="btn-save" onclick="mSave('cat')">保存する</button><button class="btn-clear" onclick="mReset('cat')">クリア</button></div>
@@ -1628,11 +1627,11 @@ function renderCatTabs() {
   var catLabels = {};
   var catNameMap = {}; // name -> id のマッピング（古い文字列を新IDに変換）
   mData.cat.forEach(function(c) {
-    catLabels[String(c.id)] = (c.icon||'📦') + ' ' + c.name;
+    catLabels[String(c.id)] = c.name;
     // 旧キー（injection等）との対応も保持
-    if(c.name.includes('注射') || c.name.includes('点滴')) { catLabels['injection'] = (c.icon||'💉') + ' ' + c.name; }
-    if(c.name.includes('スキンケア')) { catLabels['skincare'] = (c.icon||'🧴') + ' ' + c.name; }
-    if(c.name.includes('消耗')) { catLabels['supply'] = (c.icon||'📋') + ' ' + c.name; }
+    if(c.name.includes('注射') || c.name.includes('点滴')) { catLabels['injection'] = c.name; }
+    if(c.name.includes('スキンケア')) { catLabels['skincare'] = c.name; }
+    if(c.name.includes('消耗')) { catLabels['supply'] = c.name; }
   });
 
   // 同じラベルのタブが重複しないよう、ユニークなラベルのみ表示
@@ -1692,7 +1691,7 @@ function buildCatSelect(itemId, currentCat) {
     // マスター管理のカテゴリを使用
     mData.cat.forEach(function(c) {
       var val = String(c.id);
-      var label = (c.icon||'📦') + ' ' + c.name;
+      var label = c.name;
       var sel = (val === String(currentCat) || c.name === currentCat) ? ' selected' : '';
       opts.push('<option value="' + val + '"' + sel + '>' + label + '</option>');
     });
@@ -2812,7 +2811,7 @@ async function mSave(type){
   const eid=parseInt(document.getElementById('fid-'+type).value)||0;
   let data={name};
   if(type==='clinic') data={name,addr:document.getElementById('f-clinic-addr').value,tel:document.getElementById('f-clinic-tel').value,type:document.getElementById('f-clinic-type').value,active:document.getElementById('f-clinic-active').value};
-  if(type==='cat') data={name,icon:document.getElementById('f-cat-icon').value,desc:document.getElementById('f-cat-desc').value,storage:document.getElementById('f-cat-storage').value};
+  if(type==='cat') data={name,icon:'',desc:document.getElementById('f-cat-desc').value,storage:document.getElementById('f-cat-storage').value};
   if(type==='staff') data={name,role:document.getElementById('f-staff-role').value,clinic:document.getElementById('f-staff-clinic').value,perm:document.getElementById('f-staff-perm').value,email:document.getElementById('f-staff-email').value};
   if(type==='supplier') data={name,person:document.getElementById('f-supplier-person').value,tel:document.getElementById('f-supplier-tel').value,email:document.getElementById('f-supplier-email').value,items:document.getElementById('f-supplier-items').value};
   if(type==='status') data={name,color:document.getElementById('f-status-color').value,cond:document.getElementById('f-status-cond').value,desc:document.getElementById('f-status-desc').value};
