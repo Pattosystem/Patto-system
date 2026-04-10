@@ -1282,6 +1282,26 @@ let mData = {
 // ══════════════════════════════
 // Supabase データ読み込み
 // ══════════════════════════════
+// カテゴリ値を正規化（旧文字列→マスターIDに統一）
+function normalizeCat(cat) {
+  if(!cat) return 'injection';
+  // すでに数字ID形式ならそのまま
+  if(/^[0-9]+$/.test(String(cat))) return String(cat);
+  // mData.catのIDと名前でマッチング
+  if(mData && mData.cat) {
+    for(var i=0; i<mData.cat.length; i++) {
+      var c = mData.cat[i];
+      var n = c.name.toLowerCase();
+      var cv = String(cat).toLowerCase();
+      if(cv === String(c.id) || cv === n) return String(c.id);
+      if((cv.includes('注射') || cv.includes('injection') || cv.includes('点滴')) && (n.includes('注射') || n.includes('点滴'))) return String(c.id);
+      if((cv.includes('スキン') || cv.includes('skincare')) && n.includes('スキン')) return String(c.id);
+      if((cv.includes('消耗') || cv.includes('supply')) && n.includes('消耗')) return String(c.id);
+    }
+  }
+  return cat;
+}
+
 async function loadInventoryFromDB() {
   if(!currentCorpId) return;
   const { data, error } = await db.from('inventory').select('*').eq('corporation_id', currentCorpId).order('id');
@@ -1295,7 +1315,7 @@ async function loadInventoryFromDB() {
       invData.push({
         id: row.id,
         name: row.name,
-        cat: row.category || 'injection',
+        cat: normalizeCat(row.category),
         clinic: row.clinic || currentCorpName || '',
         qty: row.quantity || 0,
         min: row.min_quantity || 5,
