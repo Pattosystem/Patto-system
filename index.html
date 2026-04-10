@@ -2759,6 +2759,7 @@ function saveMDataToStorage() {
     localStorage.setItem('ps_clinics_' + currentCorpId, JSON.stringify(mData.clinic));
     localStorage.setItem('ps_staff_' + currentCorpId, JSON.stringify(mData.staff));
     localStorage.setItem('ps_supplier_' + currentCorpId, JSON.stringify(mData.supplier));
+    localStorage.setItem('ps_cat_' + currentCorpId, JSON.stringify(mData.cat));
   } catch(e) {}
 }
 
@@ -3547,6 +3548,10 @@ function initApp() {
   var savedSupplier = null;
   try { savedSupplier = JSON.parse(localStorage.getItem('ps_supplier_' + currentCorpId)); } catch(e){}
   mData.supplier = savedSupplier || [];
+  // カテゴリを復元
+  var savedCat = null;
+  try { savedCat = JSON.parse(localStorage.getItem('ps_cat_' + currentCorpId)); } catch(e){}
+  if(savedCat && savedCat.length > 0) mData.cat = savedCat;
 
   // 設定画面のクリニック情報を反映
   const corpNameInput = document.getElementById('setting-corp-name');
