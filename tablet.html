@@ -184,7 +184,10 @@ body{font-family:"M PLUS Rounded 1c",sans-serif;background:var(--surf);color:var
         </div>
       </div>
 
-      <select class="fsel" id="staff-sel"><option value="">-- 操作者を選択 --</option></select>
+      <div id="staff-wrap">
+        <select class="fsel" id="staff-sel" style="display:none"><option value="">-- 操作者を選択 --</option></select>
+        <input class="fsel" id="staff-input" type="text" placeholder="操作者名を入力してください" style="width:100%;-webkit-appearance:none">
+      </div>
       <input class="fmemo" id="memo-inp" type="text" placeholder="メモ（任意）">
       <button class="execbtn out" id="exec-btn" onclick="execStock()">📤 出庫を記録する</button>
     </div>
@@ -287,8 +290,18 @@ async function loadInv(){
 function loadStaff(){
   try{staffList=JSON.parse(localStorage.getItem("ps_staff_"+corpId))||[];}catch(e){staffList=[];}
   var sel=document.getElementById("staff-sel");
-  sel.innerHTML="<option value=\"\">-- 操作者を選択 --</option>"
-    +staffList.map(function(s){return"<option value=\""+s.name+"\">"+s.name+(s.role?" ("+s.role+")":"")+"</option>";}).join("");
+  var inp=document.getElementById("staff-input");
+  if(staffList.length>0){
+    // スタッフ登録あり→プルダウン表示
+    sel.innerHTML="<option value=\"\">-- 操作者を選択 --</option>"
+      +staffList.map(function(s){return"<option value=\""+s.name+"\">"+s.name+(s.role?" ("+s.role+")":"")+"</option>";}).join("");
+    if(sel)sel.style.display="block";
+    if(inp)inp.style.display="none";
+  }else{
+    // スタッフ未登録→テキスト入力
+    if(sel)sel.style.display="none";
+    if(inp)inp.style.display="block";
+  }
 }
 
 function fqty(item){
@@ -403,8 +416,10 @@ function changeQty(d){qty=Math.max(1,qty+d);document.getElementById("qty-disp").
 
 async function execStock(){
   if(!selItem){toast("⚠️","商品を選択してください");return;}
-  var staff=document.getElementById("staff-sel").value;
-  if(!staff){toast("⚠️","操作者を選択してください");return;}
+  var selEl=document.getElementById("staff-sel");
+  var inpEl=document.getElementById("staff-input");
+  var staff=(selEl&&selEl.style.display!=="none")?selEl.value:(inpEl?inpEl.value.trim():"");
+  if(!staff){toast("⚠️","操作者名を入力または選択してください");return;}
   var btn=document.getElementById("exec-btn");btn.disabled=true;
   var upo=selItem.units_per_outer>1?selItem.units_per_outer:1;
   // 箱単位orバラ単位で計算
