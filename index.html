@@ -361,6 +361,7 @@ tr:hover td{background:#FAFCFF}
     <div class="nl" onclick="go('report',this)">月次レポート</div>
     <div class="nl" onclick="go('stockopt',this)">適正在庫</div>
     <div class="nl" onclick="go('campaign',this)">キャンペーン</div>
+    <div class="nl" onclick="go('stockcount',this)" style="border:1.5px solid rgba(22,163,74,.4);color:#15803d">棚卸</div>
     <div class="nl" onclick="go('import',this)" style="border:1.5px solid rgba(91,164,229,.4)">インポート</div>
     <div class="nl" onclick="go('master',this)">マスター管理</div>
     <div class="nl" onclick="go('settings',this)">設定</div>
@@ -2400,6 +2401,245 @@ function markOrderReceived() {
   }
 }
 
+
+// 棚卸機能
+var currentCountId = null;
+var currentCountItems = [];
+
+function scTab(name) {
+  document.getElementById('sc-panel-new').style.display = (name==='new') ? '' : 'none';
+  document.getElementById('sc-panel-history').style.display = (name==='history') ? '' : 'none';
+  document.getElementById('sctab-new').classList.toggle('active', name==='new');
+  document.getElementById('sctab-history').classList.toggle('active', name==='history');
+  if(name === 'history') loadScHistory();
+}
+
+async function startNewCount() {
+  var today = new Date().toISOString().split('T')[0];
+  var memo = window.prompt('棚卸メモ（任意）例：月次棚卸', '月次棚卸');
+  if(memo === null) return;
+
+  var r = await db.from('inventory_counts').insert({
+    corporation_id: currentCorpId,
+    count_date: today,
+    status: 'draft',
+    memo: memo || '棚卸',
+    created_by: document.getElementById('uname').textContent || '—'
+  }).select();
+
+  if(r.error || !r.data || !r.data[0]) { toast('❌', '棚卸の開始に失敗しました'); return; }
+
+  currentCountId = r.data[0].id;
+
+  var items = invData.map(function(item) {
+    return {
+      count_id: currentCountId,
+      inventory_id: item.id,
+      product_name: item.name,
+      clinic: item.clinic,
+      system_qty: item.qty,
+      actual_qty: null,
+      difference: null,
+      unit: (item.units_per_outer > 1) ? (item.outer_unit || '箱') : '個',
+      lot_number: item.lot || '',
+      expiry_date: item.expiry || null
+    };
+  });
+
+  var r2 = await db.from('inventory_count_items').insert(items).select();
+  if(r2.error) { toast('❌', 'データの保存に失敗しました'); return; }
+
+  currentCountItems = r2.data || items;
+  toast('✅', '棚卸を開始しました（' + today + '）');
+  renderCountForm();
+}
+
+function renderCountForm() {
+  var area = document.getElementById('sc-active-area');
+  if(!area) return;
+
+  var clinics = [];
+  currentCountItems.forEach(function(i) {
+    if(clinics.indexOf(i.clinic) < 0) clinics.push(i.clinic);
+  });
+
+  var filled = currentCountItems.filter(function(i){ return i.actual_qty !== null; }).length;
+  var diffCount = currentCountItems.filter(function(i){ return i.difference && i.difference !== 0; }).length;
+
+  var html = '<div class="card" style="margin-bottom:16px">';
+  html += '<div class="ch" style="justify-content:space-between">';
+  html += '<div class="ch-title">📋 棚卸入力中</div>';
+  html += '<div style="display:flex;gap:8px">';
+  html += '<button onclick="saveCountDraft()" style="background:var(--surf);color:var(--ink2);border:1.5px solid var(--bdr);border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">一時保存</button>';
+  html += '<button onclick="confirmCount()" style="background:var(--green);color:white;border:none;border-radius:10px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">✅ 棚卸を確定する</button>';
+  html += '</div></div></div>';
+
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
+  html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--sky)">' + currentCountItems.length + '</div><div style="font-size:11px;color:var(--ink3)">対象品目</div></div>';
+  html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--green)">' + filled + '</div><div style="font-size:11px;color:var(--ink3)">入力済み</div></div>';
+  html += '<div class="card" style="padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:' + (diffCount > 0 ? 'var(--red)' : 'var(--green)') + '">' + diffCount + '</div><div style="font-size:11px;color:var(--ink3)">差異あり</div></div>';
+  html += '</div>';
+
+  clinics.forEach(function(clinic) {
+    var items = currentCountItems.filter(function(i){ return i.clinic === clinic; });
+    html += '<div class="card" style="margin-bottom:16px">';
+    html += '<div class="ch"><div class="ch-title">🏥 ' + clinic + '</div></div>';
+    html += '<div class="tbl-wrap"><table>';
+    html += '<thead><tr><th>商品名</th><th>ロット/期限</th><th style="text-align:center">システム在庫</th><th style="text-align:center">実数入力</th><th style="text-align:center">差異</th></tr></thead><tbody>';
+    items.forEach(function(item) {
+      var globalIdx = currentCountItems.indexOf(item);
+      var diff = (item.actual_qty !== null) ? (item.actual_qty - item.system_qty) : null;
+      var diffColor = (diff === null) ? '' : (diff < 0 ? 'color:var(--red);font-weight:800' : (diff > 0 ? 'color:var(--blue);font-weight:800' : 'color:var(--green);font-weight:700'));
+      var diffText = (diff === null) ? '—' : ((diff > 0 ? '+' : '') + diff + item.unit);
+      html += '<tr>';
+      html += '<td style="font-weight:700">' + item.product_name + '</td>';
+      html += '<td style="font-size:11px;color:var(--ink3)">' + (item.lot_number || '—') + (item.expiry_date ? '<br>' + item.expiry_date : '') + '</td>';
+      html += '<td style="text-align:center;font-weight:700">' + item.system_qty + item.unit + '</td>';
+      html += '<td style="text-align:center"><input type="number" min="0" value="' + (item.actual_qty !== null ? item.actual_qty : '') + '" placeholder="実数" ';
+      html += 'style="width:70px;text-align:center;border:1.5px solid var(--bdr);border-radius:8px;padding:6px;font-size:13px;font-family:inherit" ';
+      html += 'onchange="updateCountItem(' + globalIdx + ', this.value)" ';
+      html += 'oninput="updateCountItem(' + globalIdx + ', this.value)"></td>';
+      html += '<td style="text-align:center;' + diffColor + '">' + diffText + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+  });
+
+  area.innerHTML = html;
+}
+
+function updateCountItem(idx, value) {
+  var val = (value === '') ? null : parseInt(value);
+  currentCountItems[idx].actual_qty = val;
+  currentCountItems[idx].difference = (val !== null) ? (val - currentCountItems[idx].system_qty) : null;
+  // 差異カード更新
+  var filled = currentCountItems.filter(function(i){ return i.actual_qty !== null; }).length;
+  var diffCount = currentCountItems.filter(function(i){ return i.difference && i.difference !== 0; }).length;
+  var summaryCards = document.querySelectorAll('#sc-active-area > div:nth-child(2) > .card');
+  if(summaryCards[1]) summaryCards[1].querySelector('div').textContent = filled;
+  if(summaryCards[2]) {
+    var d = summaryCards[2].querySelector('div');
+    if(d) { d.textContent = diffCount; d.style.color = diffCount > 0 ? 'var(--red)' : 'var(--green)'; }
+  }
+}
+
+async function saveCountDraft() {
+  if(!currentCountId) return;
+  for(var i = 0; i < currentCountItems.length; i++) {
+    var item = currentCountItems[i];
+    if(item.id) {
+      await db.from('inventory_count_items').update({
+        actual_qty: item.actual_qty,
+        difference: item.difference
+      }).eq('id', item.id);
+    }
+  }
+  await db.from('inventory_counts').update({ status: 'draft' }).eq('id', currentCountId);
+  toast('💾', '一時保存しました');
+}
+
+async function confirmCount() {
+  var unfinished = currentCountItems.filter(function(i){ return i.actual_qty === null; }).length;
+  if(unfinished > 0) {
+    if(!window.confirm(unfinished + '件未入力の商品があります。このまま確定しますか？')) return;
+  }
+  var diffItems = currentCountItems.filter(function(i){ return i.difference && i.difference !== 0; });
+  if(diffItems.length > 0) {
+    if(!window.confirm('差異が' + diffItems.length + '件あります。在庫数をシステムに反映して確定しますか？')) return;
+  }
+  await saveCountDraft();
+  _skipRealtimeUntil = Date.now() + 10000;
+  for(var i = 0; i < currentCountItems.length; i++) {
+    var item = currentCountItems[i];
+    if(item.actual_qty !== null && item.difference !== 0 && item.inventory_id) {
+      var invItem = invData.find(function(x){ return x.id === item.inventory_id; });
+      if(invItem) {
+        invItem.qty = item.actual_qty;
+        await db.from('inventory').update({ quantity: item.actual_qty, updated_at: new Date().toISOString() }).eq('id', item.inventory_id);
+      }
+    }
+  }
+  await db.from('inventory_counts').update({ status: 'confirmed' }).eq('id', currentCountId);
+  currentCountId = null;
+  currentCountItems = [];
+  refreshKPI();
+  renderInv('all');
+  toast('✅', '棚卸を確定しました。在庫数に反映されました。');
+  var doneAreaEl = document.getElementById('sc-active-area');
+  doneAreaEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:15px;font-weight:800;color:var(--green)">棚卸が完了しました</div><div style="font-size:12px;margin-top:8px">在庫数が更新されました。</div><button id="sc-goto-history" style="margin-top:16px;background:var(--sky);color:white;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">📁 棚卸履歴を見る</button></div>';
+  var gotoBtn = document.getElementById('sc-goto-history');
+  if(gotoBtn) gotoBtn.onclick = function(){ scTab('history'); };
+}
+
+async function loadScHistory() {
+  var el = document.getElementById('sc-history-list');
+  if(!el) return;
+  el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink3)">読み込み中...</div>';
+  var r = await db.from('inventory_counts').select('*').eq('corporation_id', currentCorpId).order('count_date', {ascending:false}).limit(20);
+  if(r.error || !r.data || r.data.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--ink3)">過去の棚卸データがありません</div>';
+    return;
+  }
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  html += '<thead><tr>';
+  html += '<th style="text-align:left;padding:9px 16px;background:var(--surf);color:var(--ink3);font-size:11px;font-weight:700">日付</th>';
+  html += '<th style="text-align:left;padding:9px 16px;background:var(--surf);color:var(--ink3);font-size:11px;font-weight:700">メモ</th>';
+  html += '<th style="text-align:center;padding:9px 16px;background:var(--surf);color:var(--ink3);font-size:11px;font-weight:700">状態</th>';
+  html += '<th style="text-align:left;padding:9px 16px;background:var(--surf);color:var(--ink3);font-size:11px;font-weight:700">実施者</th>';
+  html += '<th style="padding:9px 16px;background:var(--surf)"></th>';
+  html += '</tr></thead><tbody>';
+  r.data.forEach(function(count) {
+    var statusChip = (count.status === 'confirmed') ? '<span class="chip ok">確定済み</span>' : '<span class="chip warn">下書き</span>';
+    html += '<tr>';
+    html += '<td style="padding:11px 16px;border-bottom:1.5px solid var(--bdr);font-weight:700">' + count.count_date + '</td>';
+    html += '<td style="padding:11px 16px;border-bottom:1.5px solid var(--bdr);color:var(--ink2)">' + (count.memo || '—') + '</td>';
+    html += '<td style="padding:11px 16px;border-bottom:1.5px solid var(--bdr);text-align:center">' + statusChip + '</td>';
+    html += '<td style="padding:11px 16px;border-bottom:1.5px solid var(--bdr);color:var(--ink3)">' + (count.created_by || '—') + '</td>';
+    html += '<td style="padding:11px 16px;border-bottom:1.5px solid var(--bdr)"><button onclick="viewCountDetail(' + count.id + ')" style="background:var(--blueL);color:var(--blue);border:1.5px solid var(--blueB);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">詳細</button></td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function closeCountDetail(btn) { var el = document.getElementById('sc-detail-' + btn.dataset.id); if(el) el.remove(); }
+
+async function viewCountDetail(countId) {
+  var r = await db.from('inventory_count_items').select('*').eq('count_id', countId).order('clinic');
+  if(r.error || !r.data || !r.data.length) { toast('⚠️', 'データが見つかりません'); return; }
+  var items = r.data;
+  var diffItems = items.filter(function(i){ return i.difference && i.difference !== 0; });
+  var html = '<div class="card" style="margin-top:16px">';
+  html += '<div class="ch"><div class="ch-title">📋 棚卸詳細</div>';
+  html += '<button onclick="closeCountDetail(this)" data-id="' + countId + '" style="background:var(--surf);color:var(--ink2);border:1.5px solid var(--bdr);border-radius:8px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">閉じる</button></div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px;border-bottom:1.5px solid var(--bdr)">';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--sky)">' + items.length + '</div><div style="font-size:11px;color:var(--ink3)">対象品目</div></div>';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:' + (diffItems.length > 0 ? 'var(--red)' : 'var(--green)') + '">' + diffItems.length + '</div><div style="font-size:11px;color:var(--ink3)">差異あり</div></div>';
+  html += '<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:var(--amber)">' + items.filter(function(i){ return i.actual_qty === null; }).length + '</div><div style="font-size:11px;color:var(--ink3)">未入力</div></div>';
+  html += '</div>';
+  html += '<div class="tbl-wrap"><table>';
+  html += '<thead><tr><th>商品名</th><th>クリニック</th><th>ロット/期限</th><th style="text-align:center">システム</th><th style="text-align:center">実数</th><th style="text-align:center">差異</th></tr></thead><tbody>';
+  items.forEach(function(item) {
+    var diff = item.difference;
+    var dc = (diff === null) ? '' : (diff < 0 ? 'color:var(--red);font-weight:800' : (diff > 0 ? 'color:var(--blue);font-weight:800' : 'color:var(--green)'));
+    var dt = (diff === null) ? '—' : ((diff > 0 ? '+' : '') + diff + (item.unit || ''));
+    html += '<tr>';
+    html += '<td style="font-weight:700">' + item.product_name + '</td>';
+    html += '<td style="font-size:11px;color:var(--ink3)">' + (item.clinic || '—') + '</td>';
+    html += '<td style="font-size:11px;color:var(--ink3)">' + (item.lot_number || '—') + (item.expiry_date ? '<br>' + item.expiry_date : '') + '</td>';
+    html += '<td style="text-align:center">' + item.system_qty + (item.unit || '') + '</td>';
+    html += '<td style="text-align:center;font-weight:700">' + (item.actual_qty !== null ? item.actual_qty + (item.unit || '') : '未入力') + '</td>';
+    html += '<td style="text-align:center;' + dc + '">' + dt + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  var wrapper = document.createElement('div');
+  wrapper.id = 'sc-detail-' + countId;
+  wrapper.innerHTML = html;
+  document.getElementById('sc-history-list').before(wrapper);
+}
+
+
 // mDataをlocalStorageに保存
 function saveMDataToStorage() {
   try {
@@ -2927,6 +3167,7 @@ function go(name, el) {
   if(name === 'master') { mRenderAll(); fillStaffClinic(); }
   if(name === 'import') impReset();
   if(name === 'orders') renderOrders();
+  if(name === 'stockcount') { scTab('new'); loadScHistory(); }
   if(name === 'report') renderReport();
   if(name === 'stockopt') { stockOptData=null; renderSoptTable(); }
   if(name === 'campaign') renderCampaignList();
