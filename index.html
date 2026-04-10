@@ -3001,14 +3001,91 @@ function impShowPreview(){
 }
 function impBackToMapping(){document.getElementById('imp-step3').style.display='none';document.getElementById('imp-step2').style.display='';setImpStep(2);}
 function updateImpModeLabel(){const mode=document.querySelector('input[name="imp-mode"]:checked')?.value;document.getElementById('imp-mode-warn').style.display=mode==='replace'?'':'none';}
-function impExecute(){
-  const mode=document.querySelector('input[name="imp-mode"]:checked')?.value||'replace';
-  if(mode==='replace'){invData.length=0;impParsed.forEach(function(r){invData.push(r);});}
-  else{impParsed.forEach(function(r){const idx=invData.findIndex(function(x){return x.name===r.name&&x.clinic===r.clinic;});if(idx>=0)invData[idx]=Object.assign({},invData[idx],r);else invData.push(r);});}
+async function impExecute(){
+  const mode=document.querySelector('input[name="imp-mode"]:checked')?.value||'merge';
+  const btn = document.querySelector('[onclick="impExecute()"]');
+  if(btn){ btn.disabled=true; btn.textContent='保存中...'; }
+
+  _skipRealtimeUntil = Date.now() + 15000;
+
+  if(mode==='replace'){
+    // Supabaseの既存データを削除
+    await db.from('inventory').delete().eq('corporation_id', currentCorpId);
+    invData.length=0;
+  }
+
+  // Supabaseに1件ずつupsert
+  var saved = 0;
+  for(var i=0; i<impParsed.length; i++){
+    var r = impParsed[i];
+    var row = {
+      name: r.name,
+      category: r.cat || 'injection',
+      clinic: r.clinic || currentCorpName,
+      quantity: r.qty || 0,
+      min_quantity: r.min || 3,
+      unit_price: r.price || 0,
+      expiry_date: r.expiry || null,
+      lot_number: r.lot || '',
+      corporation_id: currentCorpId,
+      units_per_outer: 1,
+      outer_unit: '箱',
+      inner_unit: '個'
+    };
+
+    if(mode==='merge'){
+      // 同名・同クリニックが既存にあればupdate、なければinsert
+      var existing = invData.find(function(x){ return x.name===r.name && x.clinic===row.clinic; });
+      if(existing && existing.id){
+        await db.from('inventory').update({
+          quantity: row.quantity,
+          min_quantity: row.min_quantity,
+          expiry_date: row.expiry_date,
+          lot_number: row.lot_number,
+          category: row.category,
+          updated_at: new Date().toISOString()
+        }).eq('id', existing.id);
+        existing.qty = row.quantity;
+        existing.min = row.min_quantity;
+        existing.expiry = row.expiry_date || '';
+        existing.lot = row.lot_number || '';
+        existing.cat = row.category;
+      } else {
+        var res = await db.from('inventory').insert(row).select();
+        if(res.data && res.data[0]){
+          invData.push({
+            id: res.data[0].id, name: r.name, cat: row.category,
+            clinic: row.clinic, qty: row.quantity, min: row.min_quantity,
+            max: 0, expiry: row.expiry_date||'', lot: row.lot_number||'',
+            price: row.unit_price, units_per_outer: 1,
+            outer_unit: '箱', inner_unit: '個'
+          });
+        }
+      }
+    } else {
+      // replace: 全件insert
+      var res2 = await db.from('inventory').insert(row).select();
+      if(res2.data && res2.data[0]){
+        invData.push({
+          id: res2.data[0].id, name: r.name, cat: row.category,
+          clinic: row.clinic, qty: row.quantity, min: row.min_quantity,
+          max: 0, expiry: row.expiry_date||'', lot: row.lot_number||'',
+          price: row.unit_price, units_per_outer: 1,
+          outer_unit: '箱', inner_unit: '個'
+        });
+      }
+    }
+    saved++;
+  }
+
   refreshKPI();
+  renderInv('all');
+  renderCatTabs();
+  updateProductSelects();
+  if(btn){ btn.disabled=false; btn.textContent='✓ 取り込む'; }
   document.getElementById('imp-step3').style.display='none';
   document.getElementById('imp-done').style.display='';
-  document.getElementById('imp-done-msg').textContent=impParsed.length+'件の在庫データを'+(mode==='replace'?'置き換え':'追加')+'ました';
+  document.getElementById('imp-done-msg').textContent=saved+'件の在庫データをSupabaseに保存しました';
 }
 function downloadTemplate(){
   const bom='\uFEFF';
