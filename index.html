@@ -1665,7 +1665,7 @@ function renderInv(filter) {
       const expStr = item.expiry ? (d.getMonth()+1)+'月'+d.getDate()+'日' : '—';
       return '<tr>'
         + '<td style="font-weight:700">' + item.name + '</td>'
-        + '<td><span class="chip sky">' + (catLabel[item.cat]||item.cat) + '</span></td>'
+        + '<td>' + buildCatSelect(item.id, item.cat) + '</td>'
         + '<td>' + item.clinic + '</td>'
         + '<td style="text-align:center;font-size:15px;font-weight:800;color:' + (low?'var(--red)':'var(--ink)') + '">' + fmtQty(item) + '</td>'
         + '<td style="text-align:center;color:var(--ink3)">' + item.min + '</td>'
@@ -1679,6 +1679,44 @@ function renderInv(filter) {
         + '</div></td></tr>';
     }).join('');
   applyClinicColToTable();
+}
+
+function buildCatSelect(itemId, currentCat) {
+  // mData.catを優先、なければcatLabelのデフォルトを使用
+  // 重複を避けるため、mData.catに登録があればそちらだけ使う
+  var opts = [];
+  if(mData.cat && mData.cat.length > 0) {
+    // マスター管理のカテゴリを使用
+    mData.cat.forEach(function(c) {
+      var val = String(c.id);
+      var label = (c.icon||'📦') + ' ' + c.name;
+      var sel = (val === String(currentCat) || c.name === currentCat) ? ' selected' : '';
+      opts.push('<option value="' + val + '"' + sel + '>' + label + '</option>');
+    });
+  } else {
+    // デフォルトカテゴリ（マスター未登録時）
+    Object.keys(catLabel).forEach(function(k) {
+      var sel = k === currentCat ? ' selected' : '';
+      opts.push('<option value="' + k + '"' + sel + '>' + catLabel[k] + '</option>');
+    });
+  }
+  return '<select onchange="quickChangeCat(this,' + itemId + ')" '
+    + 'style="background:var(--skyp);color:var(--skyd);border:1.5px solid #A8D0F5;border-radius:20px;'
+    + 'padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;outline:none;'
+    + 'appearance:none;-webkit-appearance:none">'
+    + opts.join('')
+    + '</select>';
+}
+
+async function quickChangeCat(sel, itemId) {
+  var newCat = sel.value;
+  var idx = invData.findIndex(function(i){ return i.id === itemId; });
+  if(idx < 0) return;
+  invData[idx].cat = newCat;
+  _skipRealtimeUntil = Date.now() + 5000;
+  await db.from('inventory').update({ category: newCat, updated_at: new Date().toISOString() }).eq('id', itemId);
+  toast('✅', 'カテゴリを変更しました');
+  renderCatTabs();
 }
 
 async function deleteInventory(id, name) {
