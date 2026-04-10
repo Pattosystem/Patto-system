@@ -1624,16 +1624,23 @@ function renderCatTabs() {
   // invDataにある実際のカテゴリを収集
   var usedCats = [...new Set(invData.map(function(i){ return i.cat; }).filter(Boolean))];
 
-  // mData.catに登録されたカテゴリ名と照合
+  // mData.catのIDと名前のマッピングを作成
   var catLabels = {};
-  mData.cat.forEach(function(c){ catLabels[c.id+''] = (c.icon||'📦') + ' ' + c.name; });
-  // デフォルトカテゴリ
-  var defaultCats = {injection:'💉 注射・点滴', skincare:'🧴 スキンケア', supply:'📋 消耗品', device:'🔧 機器・器具'};
+  var catNameMap = {}; // name -> id のマッピング（古い文字列を新IDに変換）
+  mData.cat.forEach(function(c) {
+    catLabels[String(c.id)] = (c.icon||'📦') + ' ' + c.name;
+    // 旧キー（injection等）との対応も保持
+    if(c.name.includes('注射') || c.name.includes('点滴')) { catLabels['injection'] = (c.icon||'💉') + ' ' + c.name; }
+    if(c.name.includes('スキンケア')) { catLabels['skincare'] = (c.icon||'🧴') + ' ' + c.name; }
+    if(c.name.includes('消耗')) { catLabels['supply'] = (c.icon||'📋') + ' ' + c.name; }
+  });
 
-  // 「すべて」ボタンの後に挿入
-  var allBtn = bar.querySelector('.fb.active, .fb');
+  // 同じラベルのタブが重複しないよう、ユニークなラベルのみ表示
+  var addedLabels = {};
   usedCats.forEach(function(cat) {
-    var label = catLabels[cat] || defaultCats[cat] || ('📦 ' + cat);
+    var label = catLabels[cat] || catLabels[String(cat)] || ('📦 ' + cat);
+    if(addedLabels[label]) return; // 重複スキップ
+    addedLabels[label] = true;
     var btn = document.createElement('button');
     btn.className = 'fb fb-cat';
     btn.textContent = label;
